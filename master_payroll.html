@@ -97,7 +97,19 @@ th{
 </div>
 
 <div class="container">
+<input type="text" id="searchInput" placeholder="Cari data..." 
+onkeyup="filterTable()" 
+style="margin-bottom:15px; padding:10px; width:100%; border-radius:8px; border:none;">
 
+    function filterTable(){
+    const keyword = document.getElementById("searchInput").value.toLowerCase();
+    const rows = document.querySelectorAll("#payrollTable tr");
+
+    rows.forEach(row=>{
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(keyword) ? "" : "none";
+    });
+}
 <!-- TABLE -->
 
 <table>
