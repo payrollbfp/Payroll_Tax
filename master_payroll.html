@@ -54,6 +54,9 @@ body{
     display:flex;
     flex-direction:column;
 }
+.input-group label{
+    margin-bottom:5px;
+}
 .input-group input,
 .input-group select{
     padding:10px;
@@ -95,25 +98,57 @@ th{
 
 <div class="container">
 
-```
 <div class="form-grid">
-    <div class="input-group"><label>Nopeg</label><input type="text" id="nopeg"></div>
-    <div class="input-group"><label>NIK</label><input type="text" id="nik"></div>
-    <div class="input-group"><label>NPWP</label><input type="text" id="npwp"></div>
-    <div class="input-group"><label>Nama</label><input type="text" id="nama"></div>
-
     <div class="input-group">
-        <label>Jenis Kelamin</label>
-        <select id="jenis_kelamin">
-            <option value="L">Laki-laki</option>
-            <option value="P">Perempuan</option>
-        </select>
+        <label>Nopeg</label>
+        <input type="text" id="nopeg">
     </div>
 
-    <div class="input-group"><label>Alamat</label><input type="text" id="alamat"></div>
-    <div class="input-group"><label>PTKP</label><input type="text" id="ptkp"></div>
-    <div class="input-group"><label>TMT</label><input type="date" id="tmt"></div>
-    <div class="input-group"><label>Project</label><input type="text" id="project"></div>
+```
+<div class="input-group">
+    <label>NIK</label>
+    <input type="text" id="nik">
+</div>
+
+<div class="input-group">
+    <label>NPWP</label>
+    <input type="text" id="npwp">
+</div>
+
+<div class="input-group">
+    <label>Nama</label>
+    <input type="text" id="nama">
+</div>
+
+<div class="input-group">
+    <label>Jenis Kelamin</label>
+    <select id="jenis_kelamin">
+        <option value="L">Laki-laki</option>
+        <option value="P">Perempuan</option>
+    </select>
+</div>
+
+<div class="input-group">
+    <label>Alamat</label>
+    <input type="text" id="alamat">
+</div>
+
+<div class="input-group">
+    <label>PTKP</label>
+    <input type="text" id="ptkp">
+</div>
+
+<div class="input-group">
+    <label>TMT</label>
+    <input type="date" id="tmt">
+</div>
+
+<div class="input-group">
+    <label>Project</label>
+    <input type="text" id="project">
+</div>
+```
+
 </div>
 
 <button class="save-btn" onclick="savePayroll()">Simpan</button>
@@ -125,7 +160,7 @@ th{
             <th>NIK</th>
             <th>NPWP</th>
             <th>Nama</th>
-            <th>JK</th>
+            <th>Jenis Kelamin</th>
             <th>Alamat</th>
             <th>PTKP</th>
             <th>TMT</th>
@@ -134,7 +169,6 @@ th{
     </thead>
     <tbody id="payrollTable"></tbody>
 </table>
-```
 
 </div>
 
@@ -142,44 +176,7 @@ th{
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxmjQuQ5kKMJwlijnDaXoBuTum0EZ16QOGVCdU37T_9hZ7Kh8po9Y4Fh3xMYmSIc6PjCw/exec";
 
-async function savePayroll(){
-
-    const formData = new URLSearchParams();
-    formData.append("action","savePayroll");
-
-    formData.append("nopeg",nopeg.value);
-    formData.append("nik",nik.value);
-    formData.append("npwp",npwp.value);
-    formData.append("nama",nama.value);
-    formData.append("jenis_kelamin",jenis_kelamin.value);
-    formData.append("alamat",alamat.value);
-    formData.append("ptkp",ptkp.value);
-    formData.append("tmt",tmt.value);
-    formData.append("project",project.value);
-
-    try{
-        const res = await fetch(API_URL,{
-            method:"POST",
-            body:formData
-        });
-
-        const result = await res.json();
-        console.log("SAVE:", result);
-
-        if(result.success){
-            alert("Data berhasil disimpan");
-            clearForm();
-            loadPayroll();
-        }else{
-            alert(result.message);
-        }
-
-    }catch(err){
-        console.error(err);
-        alert("Gagal koneksi ke server");
-    }
-}
-
+// ================= LOAD DATA =================
 async function loadPayroll(){
     try{
         const res = await fetch(API_URL + "?action=getPayroll");
@@ -217,11 +214,52 @@ async function loadPayroll(){
     }
 }
 
-function clearForm(){
-    document.querySelectorAll("input").forEach(i=>i.value="");
-    jenis_kelamin.value = "L";
+// ================= SAVE DATA =================
+async function savePayroll(){
+
+    const formData = new URLSearchParams();
+    formData.append("action","savePayroll");
+
+    formData.append("nopeg", document.getElementById("nopeg").value);
+    formData.append("nik", document.getElementById("nik").value);
+    formData.append("npwp", document.getElementById("npwp").value);
+    formData.append("nama", document.getElementById("nama").value);
+    formData.append("jenis_kelamin", document.getElementById("jenis_kelamin").value);
+    formData.append("alamat", document.getElementById("alamat").value);
+    formData.append("ptkp", document.getElementById("ptkp").value);
+    formData.append("tmt", document.getElementById("tmt").value);
+    formData.append("project", document.getElementById("project").value);
+
+    try{
+        const res = await fetch(API_URL,{
+            method:"POST",
+            body:formData
+        });
+
+        const result = await res.json();
+        console.log("SAVE:", result);
+
+        if(result.success){
+            alert("Data berhasil disimpan");
+            clearForm();
+            loadPayroll();
+        }else{
+            alert(result.message);
+        }
+
+    }catch(err){
+        console.error(err);
+        alert("Gagal koneksi ke server");
+    }
 }
 
+// ================= CLEAR FORM =================
+function clearForm(){
+    document.querySelectorAll("input").forEach(i=>i.value="");
+    document.getElementById("jenis_kelamin").value = "L";
+}
+
+// ================= INIT =================
 window.onload = loadPayroll;
 
 </script>
