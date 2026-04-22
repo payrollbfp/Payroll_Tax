@@ -239,18 +239,12 @@ async function savePayroll(){
         const result = await res.json();
         console.log("SAVE:", result);
 
-        if(result.success){
-            alert("Data berhasil disimpan");
-            clearForm();
-            loadPayroll();
-        }else{
-            alert(result.message);
-        }
-
-    }catch(err){
-        console.error(err);
-        alert("Gagal koneksi ke server");
-    }
+       if(result.success){
+    alert("Data berhasil disimpan");
+    clearForm();
+    loadPayroll();
+}else{
+    alert(result.message || "Gagal menyimpan data");
 }
 
 // ================= CLEAR FORM =================
