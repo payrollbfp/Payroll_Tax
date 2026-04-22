@@ -1,19 +1,18 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbyHVKu4enshXUlPAlbQk4tOqJlaTnHlHEvl1K8zHmcod8MeAlR6yUEliUQPeLfl9AJfJA/exec";
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbxrtvj3yyggGvCUkIuxlhWpFXyFHo52ioxckYumyOcF3LY6nM1pe_hYbiE-brPHTy44uw/exec";
 
 let currentPage = 1;
 let limit = 10;
 let totalPages = 1;
-
 let isLoading = false;
-let cache = {}; // cache per page
+let cache = {};
 
 const searchInput = document.getElementById("searchInput");
 const limitSelect = document.getElementById("limitSelect");
 const loadingEl = document.getElementById("loading");
 
 async function loadPayroll(){
-
-  if(isLoading) return; // 🔥 anti double request
+  if(isLoading) return;
   isLoading = true;
 
   const keyword = searchInput.value;
@@ -22,8 +21,6 @@ async function loadPayroll(){
   loadingEl.style.display = "block";
 
   try{
-
-    // 🔥 CACHE CHECK
     if(cache[cacheKey]){
       renderTable(cache[cacheKey]);
       isLoading = false;
@@ -34,13 +31,7 @@ async function loadPayroll(){
     const res = await fetch(`${API_URL}?action=getPayroll&search=${keyword}&page=${currentPage}&limit=${limit}`);
     const result = await res.json();
 
-    if(!result.success){
-      alert(result.message);
-      return;
-    }
-
-    cache[cacheKey] = result; // simpan cache
-
+    cache[cacheKey] = result;
     renderTable(result);
 
   }catch(err){
@@ -54,7 +45,6 @@ async function loadPayroll(){
 
 function renderTable(result){
   let rows = "";
-
   result.data.forEach(item=>{
     rows += `<tr>
       <td>${item[0]||""}</td>
@@ -85,46 +75,25 @@ function renderPagination(){
   document.getElementById("pagination").innerHTML = html;
 }
 
-function goToPage(p){
-  if(p === currentPage) return;
-  currentPage = p;
-  loadPayroll();
-}
-
-function prevPage(){
-  if(currentPage > 1){
-    currentPage--;
-    loadPayroll();
-  }
-}
-
-function nextPage(){
-  if(currentPage < totalPages){
-    currentPage++;
-    loadPayroll();
-  }
-}
+function prevPage(){ if(currentPage>1){ currentPage--; loadPayroll(); }}
+function nextPage(){ if(currentPage<totalPages){ currentPage++; loadPayroll(); }}
 
 function searchData(){
-  cache = {}; // 🔥 reset cache saat search
+  cache = {};
   currentPage = 1;
   loadPayroll();
 }
 
-// ENTER
 searchInput.addEventListener("keypress", function(e){
-  if(e.key === "Enter"){
-    searchData();
-  }
+  if(e.key === "Enter") searchData();
 });
 
-// LIMIT CHANGE
 limitSelect.addEventListener("change", function(){
   limit = parseInt(this.value);
-  cache = {}; // reset cache
+  cache = {};
   currentPage = 1;
   loadPayroll();
 });
 
-// INIT
 window.onload = loadPayroll;
+</script>
