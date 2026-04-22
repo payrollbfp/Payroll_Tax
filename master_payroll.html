@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Master Payroll Karyawan</title>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #d9918f, #6a85c9);
+    padding: 30px;
+    color: white;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding: 20px 30px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+.header h1 {
+    font-size: 28px;
+}
+
+.back-btn {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.8);
+    color: #123;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.container {
+    background: rgba(255,255,255,0.18);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.input-group label {
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+.input-group input {
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+}
+
+.save-btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    background: white;
+    color: #123;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(255,255,255,0.12);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+th, td {
+    padding: 12px;
+    text-align: center;
+    font-size: 14px;
+}
+
+th {
+    background: rgba(255,255,255,0.2);
+}
+
+tr:nth-child(even) {
+    background: rgba(255,255,255,0.08);
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Master Payroll Karyawan</h1>
+    <button class="back-btn" onclick="window.location.href='dashboard.html'">Back</button>
+</div>
+
+<div class="container">
+
+    <div class="form-grid">
+        <div class="input-group">
+            <label>Nopeg</label>
+            <input type="text" id="nopeg">
+        </div>
+
+        <div class="input-group">
+            <label>NIK</label>
+            <input type="text" id="nik">
+        </div>
+
+        <div class="input-group">
+            <label>NPWP</label>
+            <input type="text" id="npwp">
+        </div>
+
+        <div class="input-group">
+            <label>Nama</label>
+            <input type="text" id="nama">
+        </div>
+
+      <div class="input-group">
+            <label>Jenis Kelamin</label>
+            <input type="text" id="jenis_kelamin">
+        </div>
+
+        <div class="input-group">
+            <label>Alamat</label>
+            <input type="text" id="alamat">
+        </div>
+
+        <div class="input-group">
+            <label>PTKP</label>
+            <input type="text" id="ptkp">
+        </div>
+
+        <div class="input-group">
+            <label>TMT</label>
+            <input type="date" id="tmt">
+        </div>
+
+        <div class="input-group">
+            <label>Project</label>
+            <input type="text" id="project">
+        </div>
+    </div>
+
+    <button class="save-btn" onclick="savePayroll()">Simpan</button>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nopeg</th>
+                    <th>NIK</th>
+                    <th>NPWP</th>
+                    <th>Nama</th>
+                  <th>Jenis Kelamin</th>
+                    <th>Alamat</th>
+                    <th>PTKP</th>
+                    <th>TMT</th>
+                    <th>Project</th>
+                </tr>
+            </thead>
+            <tbody id="payrollTable"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+function savePayroll() {
+    const nopeg = document.getElementById("nopeg").value;
+    const nik = document.getElementById("nik").value;
+    const npwp = document.getElementById("npwp").value;
+    const nama = document.getElementById("nama").value;
+   const jenis_kelamin = document.getElementById("jenis_kelamin").value;
+    const alamat = document.getElementById("alamat").value;
+    const ptkp = document.getElementById("ptkp").value;
+    const tmt = document.getElementById("tmt").value;
+    const project = document.getElementById("project").value;
+
+    const row = `
+        <tr>
+            <td>${nopeg}</td>
+            <td>${nik}</td>
+            <td>${npwp}</td>
+            <td>${nama}</td>
+            <td>${jenis_kelamin}</td>
+            <td>${alamat}</td>
+            <td>${ptkp}</td>
+            <td>${tmt}</td>
+            <td>${project}</td>
+        </tr>
+    `;
+
+    document.getElementById("payrollTable").innerHTML += row;
+
+    document.getElementById("nopeg").value = "";
+    document.getElementById("nik").value = "";
+    document.getElementById("npwp").value = "";
+    document.getElementById("nama").value = "";
+  document.getElementById("jenis_kelamin").value = "";
+    document.getElementById("alamat").value = "";
+    document.getElementById("ptkp").value = "";
+    document.getElementById("tmt").value = "";
+    document.getElementById("project").value = "";
+}
+</script>
+
+</body>
+</html>
