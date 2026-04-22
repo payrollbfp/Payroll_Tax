@@ -5,113 +5,85 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Master Payroll Karyawan</title>
 <style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: Arial, sans-serif;
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
 }
-
-body {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #d9918f, #6a85c9);
-    padding: 30px;
-    color: white;
+body{
+    min-height:100vh;
+    background:linear-gradient(135deg,#d9918f,#6a85c9);
+    padding:30px;
+    color:white;
 }
-
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px;
-    padding: 20px 30px;
-    background: rgba(255,255,255,0.15);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:25px;
+    padding:20px 30px;
+    background:rgba(255,255,255,0.15);
+    backdrop-filter:blur(10px);
+    border-radius:20px;
+    box-shadow:0 8px 25px rgba(0,0,0,0.2);
 }
-
-.header h1 {
-    font-size: 28px;
+.back-btn{
+    padding:10px 18px;
+    border:none;
+    border-radius:8px;
+    background:white;
+    color:#123;
+    cursor:pointer;
+    font-weight:bold;
 }
-
-.back-btn {
-    padding: 10px 18px;
-    border: none;
-    border-radius: 8px;
-    background: rgba(255,255,255,0.8);
-    color: #123;
-    font-weight: bold;
-    cursor: pointer;
+.container{
+    background:rgba(255,255,255,0.18);
+    backdrop-filter:blur(10px);
+    border-radius:20px;
+    padding:25px;
 }
-
-.container {
-    background: rgba(255,255,255,0.18);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    padding: 25px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+.form-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:15px;
+    margin-bottom:20px;
 }
-
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 15px;
-    margin-bottom: 20px;
+.input-group{
+    display:flex;
+    flex-direction:column;
 }
-
-.input-group {
-    display: flex;
-    flex-direction: column;
+.input-group label{
+    margin-bottom:6px;
 }
-
-.input-group label {
-    margin-bottom: 6px;
-    font-size: 14px;
+.input-group input,
+.input-group select{
+    padding:10px;
+    border:none;
+    border-radius:8px;
+    outline:none;
 }
-
-.input-group input {
-    padding: 10px;
-    border-radius: 8px;
-    border: none;
-    outline: none;
+.save-btn{
+    padding:12px 20px;
+    border:none;
+    border-radius:8px;
+    background:white;
+    color:#123;
+    cursor:pointer;
+    font-weight:bold;
+    margin-bottom:20px;
 }
-
-.save-btn {
-    padding: 12px 20px;
-    border: none;
-    border-radius: 8px;
-    background: white;
-    color: #123;
-    font-weight: bold;
-    cursor: pointer;
-    margin-bottom: 20px;
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:rgba(255,255,255,0.12);
 }
-
-.table-container {
-    overflow-x: auto;
+th,td{
+    padding:10px;
+    text-align:center;
 }
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: rgba(255,255,255,0.12);
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-th, td {
-    padding: 12px;
-    text-align: center;
-    font-size: 14px;
-}
-
-th {
-    background: rgba(255,255,255,0.2);
-}
-
-tr:nth-child(even) {
-    background: rgba(255,255,255,0.08);
+th{
+    background:rgba(255,255,255,0.2);
 }
 </style>
 </head>
@@ -123,7 +95,6 @@ tr:nth-child(even) {
 </div>
 
 <div class="container">
-
     <div class="form-grid">
         <div class="input-group">
             <label>Nopeg</label>
@@ -145,9 +116,12 @@ tr:nth-child(even) {
             <input type="text" id="nama">
         </div>
 
-      <div class="input-group">
+        <div class="input-group">
             <label>Jenis Kelamin</label>
-            <input type="text" id="jenis_kelamin">
+            <select id="jenis_kelamin">
+                <option value="L">Laki-laki</option>
+                <option value="P">Perempuan</option>
+            </select>
         </div>
 
         <div class="input-group">
@@ -173,65 +147,102 @@ tr:nth-child(even) {
 
     <button class="save-btn" onclick="savePayroll()">Simpan</button>
 
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Nopeg</th>
-                    <th>NIK</th>
-                    <th>NPWP</th>
-                    <th>Nama</th>
-                  <th>Jenis Kelamin</th>
-                    <th>Alamat</th>
-                    <th>PTKP</th>
-                    <th>TMT</th>
-                    <th>Project</th>
-                </tr>
-            </thead>
-            <tbody id="payrollTable"></tbody>
-        </table>
-    </div>
-
+    <table>
+        <thead>
+            <tr>
+                <th>Nopeg</th>
+                <th>NIK</th>
+                <th>NPWP</th>
+                <th>Nama</th>
+                <th>Jenis Kelamin</th>
+                <th>Alamat</th>
+                <th>PTKP</th>
+                <th>TMT</th>
+                <th>Project</th>
+            </tr>
+        </thead>
+        <tbody id="payrollTable"></tbody>
+    </table>
 </div>
 
 <script>
-function savePayroll() {
-    const nopeg = document.getElementById("nopeg").value;
-    const nik = document.getElementById("nik").value;
-    const npwp = document.getElementById("npwp").value;
-    const nama = document.getElementById("nama").value;
-   const jenis_kelamin = document.getElementById("jenis_kelamin").value;
-    const alamat = document.getElementById("alamat").value;
-    const ptkp = document.getElementById("ptkp").value;
-    const tmt = document.getElementById("tmt").value;
-    const project = document.getElementById("project").value;
+const API_URL = "https://script.google.com/macros/s/AKfycbx6HX-t8QHG7DbPDt1z27ripaQAvnnBEtrE8vCXNNvtKhBcqGW-8Ovl1my-jJoPMkldsQ/exec";
 
-    const row = `
-        <tr>
-            <td>${nopeg}</td>
-            <td>${nik}</td>
-            <td>${npwp}</td>
-            <td>${nama}</td>
-            <td>${jenis_kelamin}</td>
-            <td>${alamat}</td>
-            <td>${ptkp}</td>
-            <td>${tmt}</td>
-            <td>${project}</td>
-        </tr>
-    `;
+async function savePayroll(){
+    const formData = new URLSearchParams();
+    formData.append("action","savePayroll");
+    formData.append("nopeg",document.getElementById("nopeg").value);
+    formData.append("nik",document.getElementById("nik").value);
+    formData.append("npwp",document.getElementById("npwp").value);
+    formData.append("nama",document.getElementById("nama").value);
+    formData.append("jenis_kelamin",document.getElementById("jenis_kelamin").value);
+    formData.append("alamat",document.getElementById("alamat").value);
+    formData.append("ptkp",document.getElementById("ptkp").value);
+    formData.append("tmt",document.getElementById("tmt").value);
+    formData.append("project",document.getElementById("project").value);
 
-    document.getElementById("payrollTable").innerHTML += row;
+    try{
+        const response = await fetch(API_URL,{
+            method:"POST",
+            body:formData
+        });
 
+        const result = await response.json();
+
+        if(result.success){
+            alert("Data berhasil disimpan");
+            clearForm();
+            loadPayroll();
+        }else{
+            alert(result.message);
+        }
+    }catch(error){
+        alert("Gagal koneksi ke Apps Script");
+        console.error(error);
+    }
+}
+
+async function loadPayroll(){
+    try{
+        const response = await fetch(API_URL + "?action=getPayroll");
+        const data = await response.json();
+
+        let rows = "";
+
+        data.forEach(item=>{
+            rows += `
+            <tr>
+                <td>${item[0]}</td>
+                <td>${item[1]}</td>
+                <td>${item[2]}</td>
+                <td>${item[3]}</td>
+                <td>${item[4]}</td>
+                <td>${item[5]}</td>
+                <td>${item[6]}</td>
+                <td>${item[7]}</td>
+                <td>${item[8]}</td>
+            </tr>
+            `;
+        });
+
+        document.getElementById("payrollTable").innerHTML = rows;
+    }catch(error){
+        console.error(error);
+    }
+}
+
+function clearForm(){
     document.getElementById("nopeg").value = "";
     document.getElementById("nik").value = "";
     document.getElementById("npwp").value = "";
     document.getElementById("nama").value = "";
-  document.getElementById("jenis_kelamin").value = "";
     document.getElementById("alamat").value = "";
     document.getElementById("ptkp").value = "";
     document.getElementById("tmt").value = "";
     document.getElementById("project").value = "";
 }
+
+window.onload = loadPayroll;
 </script>
 
 </body>
