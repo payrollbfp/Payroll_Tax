@@ -98,6 +98,8 @@ th{
 
 <div class="container">
 
+<!-- FORM -->
+
 <div class="form-grid">
     <div class="input-group">
         <label>Nopeg</label>
@@ -153,6 +155,8 @@ th{
 
 <button class="save-btn" onclick="savePayroll()">Simpan</button>
 
+<!-- TABLE -->
+
 <table>
     <thead>
         <tr>
@@ -176,7 +180,7 @@ th{
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxmjQuQ5kKMJwlijnDaXoBuTum0EZ16QOGVCdU37T_9hZ7Kh8po9Y4Fh3xMYmSIc6PjCw/exec";
 
-// ================= LOAD DATA =================
+// LOAD DATA
 async function loadPayroll(){
     try{
         const res = await fetch(API_URL + "?action=getPayroll");
@@ -185,7 +189,7 @@ async function loadPayroll(){
         console.log("LOAD:", result);
 
         if(!result.success){
-            alert(result.message);
+            alert(result.message || "Gagal ambil data");
             return;
         }
 
@@ -210,11 +214,11 @@ async function loadPayroll(){
 
     }catch(err){
         console.error(err);
-        alert("Gagal load data");
+        alert("Gagal load data (cek API)");
     }
 }
 
-// ================= SAVE DATA =================
+// SAVE DATA
 async function savePayroll(){
 
     const formData = new URLSearchParams();
@@ -239,21 +243,27 @@ async function savePayroll(){
         const result = await res.json();
         console.log("SAVE:", result);
 
-       if(result.success){
-    alert("Data berhasil disimpan");
-    clearForm();
-    loadPayroll();
-}else{
-    alert(result.message || "Gagal menyimpan data");
+        if(result.success){
+            alert("Data berhasil disimpan");
+            clearForm();
+            loadPayroll();
+        }else{
+            alert(result.message || "Gagal simpan");
+        }
+
+    }catch(err){
+        console.error(err);
+        alert("Gagal koneksi ke server");
+    }
 }
 
-// ================= CLEAR FORM =================
+// CLEAR FORM
 function clearForm(){
     document.querySelectorAll("input").forEach(i=>i.value="");
     document.getElementById("jenis_kelamin").value = "L";
 }
 
-// ================= INIT =================
+// INIT
 window.onload = loadPayroll;
 
 </script>
