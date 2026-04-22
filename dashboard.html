@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard Payroll Tax</title>
+  <style>
+    body {
+      font-family: Arial;
+      margin: 20px;
+    }
+    .card {
+      display: inline-block;
+      padding: 20px;
+      margin: 10px;
+      background: #007bff;
+      color: white;
+      border-radius: 10px;
+      width: 200px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Dashboard Payroll Tax</h1>
+<p>Welcome, <span id="username"></span></p>
+
+<div class="card">Master Karyawan</div>
+<div class="card">Payroll Input</div>
+<div class="card">Tax Engine</div>
+<div class="card">Report</div>
+
+<br><br>
+<button onclick="logout()">Logout</button>
+
+<script>
+const username = localStorage.getItem("username");
+
+if (!username) {
+  window.location.href = "login.html";
+}
+
+document.getElementById("username").innerText = username;
+
+function logout() {
+  localStorage.clear();
+  window.location.href = "login.html";
+}
+</script>
+
+</body>
+</html>
