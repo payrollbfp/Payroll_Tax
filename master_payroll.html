@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -7,208 +6,137 @@
 <title>Master Payroll Karyawan</title>
 
 <style>
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial,sans-serif;
-}
-body{
-    min-height:100vh;
-    background:linear-gradient(135deg,#d9918f,#6a85c9);
-    padding:30px;
-    color:white;
-}
-.header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:25px;
-    padding:20px 30px;
-    background:rgba(255,255,255,0.15);
-    backdrop-filter:blur(10px);
-    border-radius:20px;
-}
-.back-btn{
-    padding:10px 18px;
-    border:none;
-    border-radius:8px;
-    background:white;
-    color:#123;
-    cursor:pointer;
-    font-weight:bold;
-}
-.container{
-    background:rgba(255,255,255,0.18);
-    backdrop-filter:blur(10px);
-    border-radius:20px;
-    padding:25px;
-}
-.form-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:15px;
-    margin-bottom:20px;
-}
-.input-group{
-    display:flex;
-    flex-direction:column;
-}
-.input-group label{
-    margin-bottom:5px;
-}
-.input-group input,
-.input-group select{
-    padding:10px;
-    border:none;
-    border-radius:8px;
-}
-.save-btn{
-    padding:12px 20px;
-    border:none;
-    border-radius:8px;
-    background:white;
-    color:#123;
-    cursor:pointer;
-    font-weight:bold;
-    margin-bottom:20px;
-}
-table{
-    width:100%;
-    border-collapse:collapse;
-    background:rgba(255,255,255,0.12);
-}
-th,td{
-    padding:10px;
-    text-align:left;
-}
-th{
-    background:rgba(255,255,255,0.2);
-}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
+body{min-height:100vh;background:linear-gradient(135deg,#d9918f,#6a85c9);padding:30px;color:white}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px;padding:20px 30px;background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);border-radius:20px}
+.back-btn{padding:10px 18px;border:none;border-radius:8px;background:white;color:#123;cursor:pointer;font-weight:bold}
+.container{background:rgba(255,255,255,0.18);backdrop-filter:blur(10px);border-radius:20px;padding:25px}
+.search-bar{display:flex;gap:10px;margin-bottom:15px}
+input{flex:1;padding:10px;border-radius:8px;border:none}
+.search-btn{padding:10px 18px;border:none;border-radius:8px;background:white;color:#123;cursor:pointer;font-weight:bold}
+.controls{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+select{padding:8px;border-radius:6px;border:none}
+.loading{display:none;margin:10px 0}
+table{width:100%;border-collapse:collapse;background:rgba(255,255,255,0.12)}
+th,td{padding:10px;text-align:left}
+th{background:rgba(255,255,255,0.2)}
+.pagination{margin-top:15px;display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.pagination button{padding:8px 12px;border:none;border-radius:6px;cursor:pointer}
+.active{background:#fff;color:#123;font-weight:bold}
+.disabled{opacity:0.4;cursor:not-allowed}
 </style>
-
 </head>
-
 <body>
 
 <div class="header">
-    <h1>Master Payroll Karyawan</h1>
-    <button class="back-btn" onclick="window.location.href='dashboard.html'">Back</button>
+  <h1>Master Payroll Karyawan</h1>
+  <button class="back-btn" onclick="window.location.href='dashboard.html'">Back</button>
 </div>
 
 <div class="container">
 
-<!-- TABLE -->
+<div class="search-bar">
+  <input type="text" id="searchInput" placeholder="Cari Nama Karyawan...">
+  <button class="search-btn" onclick="searchData()">Search</button>
+</div>
+
+<div class="controls">
+  <div>
+    Show 
+    <select id="limitSelect">
+      <option value="10">10</option>
+      <option value="25">25</option>
+      <option value="50">50</option>
+    </select>
+    data
+  </div>
+  <div id="loading" class="loading">Loading...</div>
+</div>
 
 <table>
-    <thead>
-        <tr>
-            <th>Nopeg</th>
-            <th>NIK</th>
-            <th>NPWP</th>
-            <th>Nama</th>
-            <th>Jenis Kelamin</th>
-            <th>Alamat</th>
-            <th>PTKP</th>
-            <th>TMT</th>
-            <th>Project</th>
-        </tr>
-    </thead>
-    <tbody id="payrollTable"></tbody>
+<thead>
+<tr>
+<th>Nopeg</th><th>NIK</th><th>NPWP</th><th>Nama</th><th>Jenis Kelamin</th><th>Alamat</th><th>PTKP</th><th>TMT</th><th>Project</th>
+</tr>
+</thead>
+<tbody id="payrollTable"></tbody>
 </table>
+
+<div id="pagination" class="pagination"></div>
 
 </div>
 
 <script>
+const API_URL = "https://script.google.com/macros/s/AKfycbxrtvj3yyggGvCUkIuxlhWpFXyFHo52ioxckYumyOcF3LY6nM1pe_hYbiE-brPHTy44uw/exec";
+let currentPage = 1;
+let limit = 10;
+let totalPages = 1;
 
-const API_URL = "https://script.google.com/macros/s/AKfycbyHVKu4enshXUlPAlbQk4tOqJlaTnHlHEvl1K8zHmcod8MeAlR6yUEliUQPeLfl9AJfJA/exec";
-
-// LOAD DATA
 async function loadPayroll(){
-    try{
-        const res = await fetch(API_URL + "?action=getPayroll");
-        const result = await res.json();
+  const keyword = document.getElementById("searchInput").value;
+  document.getElementById("loading").style.display = "block";
 
-        console.log("LOAD:", result);
+  try{
+    const res = await fetch(`${API_URL}?action=getPayroll&search=${keyword}&page=${currentPage}&limit=${limit}`);
+    const result = await res.json();
 
-        if(!result.success){
-            alert(result.message || "Gagal ambil data");
-            return;
-        }
+    if(!result.success){ alert(result.message); return; }
 
-        let rows = "";
+    let rows = "";
+    result.data.forEach(item=>{
+      rows += `<tr>
+      <td>${item[0]||""}</td><td>${item[1]||""}</td><td>${item[2]||""}</td>
+      <td>${item[3]||""}</td><td>${item[4]||""}</td><td>${item[5]||""}</td>
+      <td>${item[6]||""}</td><td>${item[7]||""}</td><td>${item[8]||""}</td>
+      </tr>`;
+    });
 
-        result.data.forEach(item=>{
-            rows += `
-            <tr>
-                <td>${item[0] || ""}</td>
-                <td>${item[1] || ""}</td>
-                <td>${item[2] || ""}</td>
-                <td>${item[3] || ""}</td>
-                <td>${item[4] || ""}</td>
-                <td>${item[5] || ""}</td>
-                <td>${item[6] || ""}</td>
-                <td>${item[7] || ""}</td>
-                <td>${item[8] || ""}</td>
-            </tr>`;
-        });
+    document.getElementById("payrollTable").innerHTML = rows;
+    totalPages = Math.ceil(result.total / limit);
+    renderPagination();
 
-        document.getElementById("payrollTable").innerHTML = rows;
-
-    }catch(err){
-        console.error(err);
-        alert("Gagal load data (cek API)");
-    }
+  }catch(err){ console.error(err); alert("Error server"); }
+  document.getElementById("loading").style.display = "none";
 }
 
-// SAVE DATA
-async function savePayroll(){
+function renderPagination(){
+  let html = "";
 
-    const formData = new URLSearchParams();
-    formData.append("action","savePayroll");
+  html += `<button onclick="prevPage()" class="${currentPage===1?'disabled':''}">Prev</button>`;
 
-    formData.append("nopeg", document.getElementById("nopeg").value);
-    formData.append("nik", document.getElementById("nik").value);
-    formData.append("npwp", document.getElementById("npwp").value);
-    formData.append("nama", document.getElementById("nama").value);
-    formData.append("jenis_kelamin", document.getElementById("jenis_kelamin").value);
-    formData.append("alamat", document.getElementById("alamat").value);
-    formData.append("ptkp", document.getElementById("ptkp").value);
-    formData.append("tmt", document.getElementById("tmt").value);
-    formData.append("project", document.getElementById("project").value);
+  let start = Math.max(1, currentPage - 2);
+  let end = Math.min(totalPages, currentPage + 2);
 
-    try{
-        const res = await fetch(API_URL,{
-            method:"POST",
-            body:formData
-        });
+  if(start > 1) html += `<span>...</span>`;
 
-        const result = await res.json();
-        console.log("SAVE:", result);
+  for(let i=start;i<=end;i++){
+    html += `<button onclick="goToPage(${i})" class="${i===currentPage?'active':''}">${i}</button>`;
+  }
 
-        if(result.success){
-            alert("Data berhasil disimpan");
-            clearForm();
-            loadPayroll();
-        }else{
-            alert(result.message || "Gagal simpan");
-        }
+  if(end < totalPages) html += `<span>...</span>`;
 
-    }catch(err){
-        console.error(err);
-        alert("Gagal koneksi ke server");
-    }
+  html += `<button onclick="nextPage()" class="${currentPage===totalPages?'disabled':''}">Next</button>`;
+
+  document.getElementById("pagination").innerHTML = html;
 }
 
-// CLEAR FORM
-function clearForm(){
-    document.querySelectorAll("input").forEach(i=>i.value="");
-    document.getElementById("jenis_kelamin").value = "L";
-}
+function goToPage(p){ currentPage = p; loadPayroll(); }
+function prevPage(){ if(currentPage>1){ currentPage--; loadPayroll(); }}
+function nextPage(){ if(currentPage<totalPages){ currentPage++; loadPayroll(); }}
 
-// INIT
+function searchData(){ currentPage=1; loadPayroll(); }
+
+// ENTER
+searchInput.addEventListener("keypress", e=>{ if(e.key==="Enter") searchData(); });
+
+// LIMIT CHANGE
+limitSelect.addEventListener("change", function(){
+  limit = parseInt(this.value);
+  currentPage = 1;
+  loadPayroll();
+});
+
 window.onload = loadPayroll;
-
 </script>
 
 </body>
