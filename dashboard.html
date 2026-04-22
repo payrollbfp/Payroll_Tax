@@ -1,48 +1,130 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Dashboard Payroll Tax</title>
-  <style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payroll Tax Dashboard</title>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: Arial, sans-serif;
+    }
+
     body {
-      font-family: Arial;
-      margin: 20px;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #d9918f, #6a85c9);
+        padding: 30px;
+        color: white;
     }
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding: 20px 30px;
+        background: rgba(255,255,255,0.15);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    }
+
+    .header h1 {
+        font-size: 28px;
+    }
+
+    .logout-btn {
+        padding: 10px 18px;
+        border: none;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.8);
+        color: #123;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 25px;
+    }
+
     .card {
-      display: inline-block;
-      padding: 20px;
-      margin: 10px;
-      background: #007bff;
-      color: white;
-      border-radius: 10px;
-      width: 200px;
+        background: rgba(255,255,255,0.18);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: 0.3s;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
     }
-  </style>
+
+    .card:hover {
+        transform: translateY(-5px);
+        background: rgba(255,255,255,0.28);
+    }
+
+    .icon {
+        font-size: 40px;
+        margin-bottom: 15px;
+    }
+
+    .card h2 {
+        font-size: 20px;
+        margin-bottom: 10px;
+    }
+
+    .card p {
+        font-size: 14px;
+        opacity: 0.9;
+    }
+</style>
 </head>
 <body>
 
-<h1>Dashboard Payroll Tax</h1>
-<p>Welcome, <span id="username"></span></p>
+<div class="header">
+    <h1>Payroll Tax Dashboard</h1>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+</div>
 
-<div class="card">Master Karyawan</div>
-<div class="card">Payroll Input</div>
-<div class="card">Tax Engine</div>
-<div class="card">Report</div>
+<div class="dashboard-grid">
 
-<br><br>
-<button onclick="logout()">Logout</button>
+    <div class="card" onclick="openMenu('master')">
+        <div class="icon">👥</div>
+        <h2>Master Karyawan</h2>
+        <p>Kelola data karyawan dan komponen payroll</p>
+    </div>
+
+    <div class="card" onclick="openMenu('payroll')">
+        <div class="icon">💰</div>
+        <h2>Payroll Input</h2>
+        <p>Input payroll bulanan dan tunjangan</p>
+    </div>
+
+    <div class="card" onclick="openMenu('tax')">
+        <div class="icon">🧾</div>
+        <h2>Tax Engine</h2>
+        <p>Hitung PPh21 Tahunan dan TER</p>
+    </div>
+
+    <div class="card" onclick="openMenu('report')">
+        <div class="icon">📊</div>
+        <h2>Report</h2>
+        <p>Laporan payroll dan pajak karyawan</p>
+    </div>
+
+</div>
 
 <script>
-const username = localStorage.getItem("username");
-
-if (!username) {
-  window.location.href = "login.html";
+function logout() {
+    window.location.href = "index.html";
 }
 
-document.getElementById("username").innerText = username;
-
-function logout() {
-  localStorage.clear();
-  window.location.href = "login.html";
+function openMenu(menu) {
+    alert("Menu " + menu + " akan dibuat pada tahap berikutnya");
 }
 </script>
 
