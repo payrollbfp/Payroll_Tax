@@ -1,143 +1,130 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Master Payroll Karyawan</title>
-
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
-body{min-height:100vh;background:linear-gradient(135deg,#d9918f,#6a85c9);padding:30px;color:white}
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px;padding:20px 30px;background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);border-radius:20px}
-.back-btn{padding:10px 18px;border:none;border-radius:8px;background:white;color:#123;cursor:pointer;font-weight:bold}
-.container{background:rgba(255,255,255,0.18);backdrop-filter:blur(10px);border-radius:20px;padding:25px}
-.search-bar{display:flex;gap:10px;margin-bottom:15px}
-input{flex:1;padding:10px;border-radius:8px;border:none}
-.search-btn{padding:10px 18px;border:none;border-radius:8px;background:white;color:#123;cursor:pointer;font-weight:bold}
-.controls{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-select{padding:8px;border-radius:6px;border:none}
-.loading{display:none;margin:10px 0}
-table{width:100%;border-collapse:collapse;background:rgba(255,255,255,0.12)}
-th,td{padding:10px;text-align:left}
-th{background:rgba(255,255,255,0.2)}
-.pagination{margin-top:15px;display:flex;gap:5px;flex-wrap:wrap;align-items:center}
-.pagination button{padding:8px 12px;border:none;border-radius:6px;cursor:pointer}
-.active{background:#fff;color:#123;font-weight:bold}
-.disabled{opacity:0.4;cursor:not-allowed}
-</style>
-</head>
-<body>
-
-<div class="header">
-  <h1>Master Payroll Karyawan</h1>
-  <button class="back-btn" onclick="window.location.href='dashboard.html'">Back</button>
-</div>
-
-<div class="container">
-
-<div class="search-bar">
-  <input type="text" id="searchInput" placeholder="Cari Nama Karyawan...">
-  <button class="search-btn" onclick="searchData()">Search</button>
-</div>
-
-<div class="controls">
-  <div>
-    Show 
-    <select id="limitSelect">
-      <option value="10">10</option>
-      <option value="25">25</option>
-      <option value="50">50</option>
-    </select>
-    data
-  </div>
-  <div id="loading" class="loading">Loading...</div>
-</div>
-
-<table>
-<thead>
-<tr>
-<th>Nopeg</th><th>NIK</th><th>NPWP</th><th>Nama</th><th>Jenis Kelamin</th><th>Alamat</th><th>PTKP</th><th>TMT</th><th>Project</th>
-</tr>
-</thead>
-<tbody id="payrollTable"></tbody>
-</table>
-
-<div id="pagination" class="pagination"></div>
-
-</div>
-
-<script>
 const API_URL = "https://script.google.com/macros/s/AKfycbxrtvj3yyggGvCUkIuxlhWpFXyFHo52ioxckYumyOcF3LY6nM1pe_hYbiE-brPHTy44uw/exec";
+
 let currentPage = 1;
 let limit = 10;
 let totalPages = 1;
 
+let isLoading = false;
+let cache = {}; // cache per page
+
+const searchInput = document.getElementById("searchInput");
+const limitSelect = document.getElementById("limitSelect");
+const loadingEl = document.getElementById("loading");
+
 async function loadPayroll(){
-  const keyword = document.getElementById("searchInput").value;
-  document.getElementById("loading").style.display = "block";
+
+  if(isLoading) return; // 🔥 anti double request
+  isLoading = true;
+
+  const keyword = searchInput.value;
+  const cacheKey = `${keyword}_${currentPage}_${limit}`;
+
+  loadingEl.style.display = "block";
 
   try{
+
+    // 🔥 CACHE CHECK
+    if(cache[cacheKey]){
+      renderTable(cache[cacheKey]);
+      isLoading = false;
+      loadingEl.style.display = "none";
+      return;
+    }
+
     const res = await fetch(`${API_URL}?action=getPayroll&search=${keyword}&page=${currentPage}&limit=${limit}`);
     const result = await res.json();
 
-    if(!result.success){ alert(result.message); return; }
+    if(!result.success){
+      alert(result.message);
+      return;
+    }
 
-    let rows = "";
-    result.data.forEach(item=>{
-      rows += `<tr>
-      <td>${item[0]||""}</td><td>${item[1]||""}</td><td>${item[2]||""}</td>
-      <td>${item[3]||""}</td><td>${item[4]||""}</td><td>${item[5]||""}</td>
-      <td>${item[6]||""}</td><td>${item[7]||""}</td><td>${item[8]||""}</td>
-      </tr>`;
-    });
+    cache[cacheKey] = result; // simpan cache
 
-    document.getElementById("payrollTable").innerHTML = rows;
-    totalPages = Math.ceil(result.total / limit);
-    renderPagination();
+    renderTable(result);
 
-  }catch(err){ console.error(err); alert("Error server"); }
-  document.getElementById("loading").style.display = "none";
+  }catch(err){
+    console.error(err);
+    alert("Error server");
+  }
+
+  isLoading = false;
+  loadingEl.style.display = "none";
+}
+
+function renderTable(result){
+  let rows = "";
+
+  result.data.forEach(item=>{
+    rows += `<tr>
+      <td>${item[0]||""}</td>
+      <td>${item[1]||""}</td>
+      <td>${item[2]||""}</td>
+      <td>${item[3]||""}</td>
+      <td>${item[4]||""}</td>
+      <td>${item[5]||""}</td>
+      <td>${item[6]||""}</td>
+      <td>${item[7]||""}</td>
+      <td>${item[8]||""}</td>
+    </tr>`;
+  });
+
+  document.getElementById("payrollTable").innerHTML = rows;
+
+  totalPages = Math.ceil(result.total / limit);
+  renderPagination();
 }
 
 function renderPagination(){
   let html = "";
 
-  html += `<button onclick="prevPage()" class="${currentPage===1?'disabled':''}">Prev</button>`;
-
-  let start = Math.max(1, currentPage - 2);
-  let end = Math.min(totalPages, currentPage + 2);
-
-  if(start > 1) html += `<span>...</span>`;
-
-  for(let i=start;i<=end;i++){
-    html += `<button onclick="goToPage(${i})" class="${i===currentPage?'active':''}">${i}</button>`;
-  }
-
-  if(end < totalPages) html += `<span>...</span>`;
-
-  html += `<button onclick="nextPage()" class="${currentPage===totalPages?'disabled':''}">Next</button>`;
+  html += `<button onclick="prevPage()" ${currentPage===1?'disabled':''}>Prev</button>`;
+  html += `<span> Page ${currentPage} / ${totalPages} </span>`;
+  html += `<button onclick="nextPage()" ${currentPage===totalPages?'disabled':''}>Next</button>`;
 
   document.getElementById("pagination").innerHTML = html;
 }
 
-function goToPage(p){ currentPage = p; loadPayroll(); }
-function prevPage(){ if(currentPage>1){ currentPage--; loadPayroll(); }}
-function nextPage(){ if(currentPage<totalPages){ currentPage++; loadPayroll(); }}
+function goToPage(p){
+  if(p === currentPage) return;
+  currentPage = p;
+  loadPayroll();
+}
 
-function searchData(){ currentPage=1; loadPayroll(); }
+function prevPage(){
+  if(currentPage > 1){
+    currentPage--;
+    loadPayroll();
+  }
+}
+
+function nextPage(){
+  if(currentPage < totalPages){
+    currentPage++;
+    loadPayroll();
+  }
+}
+
+function searchData(){
+  cache = {}; // 🔥 reset cache saat search
+  currentPage = 1;
+  loadPayroll();
+}
 
 // ENTER
-searchInput.addEventListener("keypress", e=>{ if(e.key==="Enter") searchData(); });
+searchInput.addEventListener("keypress", function(e){
+  if(e.key === "Enter"){
+    searchData();
+  }
+});
 
 // LIMIT CHANGE
 limitSelect.addEventListener("change", function(){
   limit = parseInt(this.value);
+  cache = {}; // reset cache
   currentPage = 1;
   loadPayroll();
 });
 
+// INIT
 window.onload = loadPayroll;
-</script>
-
-</body>
-</html>
