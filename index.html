@@ -121,7 +121,7 @@
 
         <div class="input-box">
             <span>👤</span>
-            <input type="text" id="username" placeholder="Email ID">
+            <input type="text" id="username" placeholder="Username">
         </div>
 
         <div class="input-box">
@@ -141,24 +141,36 @@
 
 <script>
 async function login() {
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const message = document.getElementById("message");
+
+    message.innerText = "Checking login...";
 
     const url = "https://script.google.com/macros/s/AKfycbxNYCArGktOSMtEiAP1hw3aE_OU27W26K_GUMJuaUnkwFFdfBG-pCNhYrQNi5LBHIsacw/exec?action=login&username=" 
-              + username + "&password=" + password;
+        + encodeURIComponent(username) 
+        + "&password=" 
+        + encodeURIComponent(password);
 
     try {
         const response = await fetch(url);
         const result = await response.json();
 
-        if (result.success) {
-            window.location.href = "dashboard.html";
+        if (result.success === true) {
+            message.style.color = "green";
+            message.innerText = "Login berhasil...";
+            setTimeout(() => {
+                window.location.href = "dashboard.html";
+            }, 500);
         } else {
-            document.getElementById("message").innerText = "Username atau password salah";
+            message.style.color = "red";
+            message.innerText = "Username atau password salah";
         }
+
     } catch (error) {
-        document.getElementById("message").innerText = "Gagal terhubung ke server";
         console.error(error);
+        message.style.color = "red";
+        message.innerText = "Gagal terhubung ke server";
     }
 }
 </script>
