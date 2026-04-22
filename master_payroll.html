@@ -205,29 +205,38 @@ async function savePayroll(){
 async function loadPayroll(){
     try{
         const response = await fetch(API_URL + "?action=getPayroll");
-        const data = await response.json();
+        const result = await response.json();
 
+        if(!result.success){
+            alert(result.message);
+            return;
+        }
+
+        const data = result.data;
         let rows = "";
 
         data.forEach(item=>{
             rows += `
             <tr>
-                <td>${item[0]}</td>
-                <td>${item[1]}</td>
-                <td>${item[2]}</td>
-                <td>${item[3]}</td>
-                <td>${item[4]}</td>
-                <td>${item[5]}</td>
-                <td>${item[6]}</td>
-                <td>${item[7]}</td>
-                <td>${item[8]}</td>
+                <td>${item[0] || ""}</td>
+                <td>${item[1] || ""}</td>
+                <td>${item[2] || ""}</td>
+                <td>${item[3] || ""}</td>
+                <td>${item[4] || ""}</td>
+                <td>${item[5] || ""}</td>
+                <td>${item[6] || ""}</td>
+                <td>${item[7] || ""}</td>
+                <td>${item[8] || ""}</td>
+                <td>${item[9] || ""}</td>
             </tr>
             `;
         });
 
         document.getElementById("payrollTable").innerHTML = rows;
+
     }catch(error){
         console.error(error);
+        alert("Gagal mengambil data payroll");
     }
 }
 
@@ -236,6 +245,7 @@ function clearForm(){
     document.getElementById("nik").value = "";
     document.getElementById("npwp").value = "";
     document.getElementById("nama").value = "";
+    document.getElementById("jenis_kelamin").value = "";
     document.getElementById("alamat").value = "";
     document.getElementById("ptkp").value = "";
     document.getElementById("tmt").value = "";
