@@ -145,11 +145,12 @@ async function login() {
     const password = document.getElementById("password").value.trim();
     const message = document.getElementById("message");
 
+    message.style.color = "black";
     message.innerText = "Checking login...";
 
-    const url = "https://script.google.com/a/macros/bintangfajarpersada.com/s/AKfycbxNYCArGktOSMtEiAP1hw3aE_OU27W26K_GUMJuaUnkwFFdfBG-pCNhYrQNi5LBHIsacw/exec" 
-        + encodeURIComponent(username) 
-        + "&password=" 
+    const url = "https://script.google.com/macros/s/AKfycbwMb7l5fGDTbpAr04BBXvA0z-xeHROj68ww0PJgdI6doyPZkCCYvuJtBoFJLflIW2-6rA/exec?action=login&username="
+        + encodeURIComponent(username)
+        + "&password="
         + encodeURIComponent(password);
 
     try {
@@ -159,12 +160,14 @@ async function login() {
         if (result.success === true) {
             message.style.color = "green";
             message.innerText = "Login berhasil...";
+
             setTimeout(() => {
                 window.location.href = "dashboard.html";
             }, 500);
+
         } else {
             message.style.color = "red";
-            message.innerText = "Username atau password salah";
+            message.innerText = result.message || "Username atau password salah";
         }
 
     } catch (error) {
