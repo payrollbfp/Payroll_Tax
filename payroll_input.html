@@ -71,19 +71,12 @@ th{
 
 <body>
 
-<!-- TOTAL REALISASI -->
-<div id="topRealisasi" style="
-    margin-bottom:15px;
-    padding:15px;
-    background:rgba(255,255,255,0.15);
-    border-radius:15px;
-    font-weight:bold;">
+<div id="topRealisasi" style="margin-bottom:15px;padding:15px;background:rgba(255,255,255,0.15);border-radius:15px;font-weight:bold;">
     Total Realisasi: Rp 0
 </div>
 
 <div class="header">
     <h1>Payroll Input Upload</h1>
-    <button onclick="window.location.href='dashboard.html'">Back</button>
 </div>
 
 <div class="container">
@@ -124,7 +117,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbzlxD3KY7Tl8HHl6Eo_C0Wt
 
 let payrollData = [];
 
-// UPLOAD FILE
+// UPLOAD EXCEL
 document.getElementById("excelFile").addEventListener("change", function(e){
 
     const file = e.target.files[0];
@@ -133,25 +126,19 @@ document.getElementById("excelFile").addEventListener("change", function(e){
     const reader = new FileReader();
 
     reader.onload = function(evt){
-        try{
-            const data = new Uint8Array(evt.target.result);
-            const workbook = XLSX.read(data, {type:'array'});
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, {type:'array'});
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
-            payrollData = XLSX.utils.sheet_to_json(sheet, {
-                header:1,
-                defval:""
-            });
+        payrollData = XLSX.utils.sheet_to_json(sheet, {
+            header:1,
+            defval:""
+        });
 
-            console.log("DATA:", payrollData);
+        console.log("DATA:", payrollData);
 
-            renderPreview();
-            hitungTotal();
-
-        }catch(err){
-            console.error(err);
-            alert("Gagal membaca file Excel");
-        }
+        renderPreview();
+        hitungTotal();
     };
 
     reader.readAsArrayBuffer(file);
@@ -159,7 +146,6 @@ document.getElementById("excelFile").addEventListener("change", function(e){
 
 // RENDER TABLE
 function renderPreview(){
-
     let html = "";
 
     for(let i = 1; i < payrollData.length; i++){
@@ -171,12 +157,7 @@ function renderPreview(){
             html += `<td>${row[j] || ""}</td>`;
         }
 
-        html += `<td>
-            <button onclick="deleteRow(${i-1})" style="background:red;color:white;">
-                Hapus
-            </button>
-        </td>`;
-
+        html += `<td><button onclick="deleteRow(${i-1})" style="background:red;color:white;">Hapus</button></td>`;
         html += "</tr>";
     }
 
@@ -185,14 +166,12 @@ function renderPreview(){
 
 // DELETE ROW
 function deleteRow(index){
-    if(confirm("Hapus baris ini?")){
-        payrollData.splice(index + 1, 1);
-        renderPreview();
-        hitungTotal();
-    }
+    payrollData.splice(index + 1, 1);
+    renderPreview();
+    hitungTotal();
 }
 
-// HITUNG TOTAL REALISASI
+// HITUNG TOTAL
 function hitungTotal(){
     let total = 0;
 
@@ -204,33 +183,42 @@ function hitungTotal(){
         "Total Realisasi: Rp " + total.toLocaleString("id-ID");
 }
 
-// SAVE KE GOOGLE SHEET
+// SAVE
 async function savePayroll(){
-
-    console.log("TOMBOL DIKLIK"); // 👈 TAMBAH INI
 
     if(payrollData.length <= 1){
         alert("Upload data dulu");
         return;
     }
 
-    console.log("DATA DIKIRIM:", payrollData.slice(1)); // 👈 TAMBAH INI
+    try{
+        const res = await fetch(API_URL,{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body: JSON.stringify({
+                action:"savePayrollUpload",
+                data: payrollData.slice(1)
+            })
+        });
 
-       const res = await fetch(API_URL,{
-    method:"POST",
-    headers:{
-        "Content-Type":"application/json"
-    },
-    body: JSON.stringify({
-        action:"savePayrollUpload",
-        data: payrollData.slice(1)
-    })
-});
+        const text = await res.text();
+        console.log("RESPONSE:", text);
 
-console.log("STATUS:", res.status); // 👈 TAMBAH
+        let result = JSON.parse(text);
 
-const text = await res.text();
-console.log("RESPONSE:", text);
+        if(result.success){
+            alert("Data berhasil disimpan");
+        }else{
+            alert("Error: " + result.message);
+        }
+
+    }catch(err){
+        console.error(err);
+        alert("Error koneksi ke server");
+    }
+}
 
 </script>
 
