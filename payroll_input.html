@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Payroll Advanced</title>
+<title>Payroll System</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -10,50 +10,43 @@
 <style>
 body {
   font-family: 'Segoe UI';
-  background: #eef2f7;
-  margin: 0;
+  background:#eef2f7;
+  margin:0;
 }
 
 .header {
-  background: #1e293b;
-  color: white;
-  padding: 15px;
+  background:#1e293b;
+  color:white;
+  padding:15px;
 }
 
 .container {
-  padding: 20px;
+  padding:20px;
 }
 
 .card {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 6px 15px rgba(0,0,0,0.1);
 }
 
 button {
-  border: none;
-  padding: 8px 14px;
-  margin: 4px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
+  border:none;
+  padding:8px 14px;
+  margin:4px;
+  border-radius:6px;
+  cursor:pointer;
 }
 
-.btn-primary { background:#3b82f6; color:white; }
-.btn-success { background:#10b981; color:white; }
-.btn-danger { background:#ef4444; color:white; }
-.btn-warning { background:#f59e0b; color:white; }
-
-input {
-  padding:6px;
-  border:1px solid #ccc;
-  border-radius:5px;
-}
+.btn-primary {background:#3b82f6;color:white;}
+.btn-success {background:#10b981;color:white;}
+.btn-warning {background:#f59e0b;color:white;}
+.btn-danger {background:#ef4444;color:white;}
 
 table {
   width:100%;
-  border-collapse: collapse;
+  border-collapse:collapse;
   margin-top:20px;
 }
 
@@ -68,16 +61,17 @@ th {
   color:white;
 }
 
-td input {
-  width:100%;
-  border:none;
-  background:transparent;
-}
-
 .loading {
   display:none;
   color:#3b82f6;
   font-weight:bold;
+}
+
+.detail-box {
+  background:#f1f5f9;
+  padding:10px;
+  border-radius:8px;
+  line-height:1.6;
 }
 </style>
 </head>
@@ -85,7 +79,7 @@ td input {
 <body>
 
 <div class="header">
-  <h2>Payroll Upload Advanced</h2>
+  <h2>Payroll Upload System</h2>
 </div>
 
 <div class="container">
@@ -107,6 +101,7 @@ td input {
 <th>Gaji</th>
 <th>Tunjangan</th>
 <th>Realisasi</th>
+<th>Detail</th>
 <th>Aksi</th>
 </tr>
 </thead>
@@ -129,7 +124,7 @@ let dataGlobal = [];
 /* ================= PREVIEW ================= */
 function preview() {
   const file = document.getElementById("fileInput").files[0];
-  if (!file) return alert("Pilih file");
+  if (!file) return alert("Pilih file dulu");
 
   document.getElementById("loading").style.display = "block";
 
@@ -139,7 +134,7 @@ function preview() {
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const json = XLSX.utils.sheet_to_json(sheet);
 
-    dataGlobal = validateData(json);
+    dataGlobal = json;
     render();
 
     document.getElementById("loading").style.display = "none";
@@ -148,52 +143,71 @@ function preview() {
   reader.readAsArrayBuffer(file);
 }
 
-/* ================= VALIDATION ================= */
-function validateData(data) {
-  const seen = new Set();
-
-  return data.filter(row => {
-    if (!row.Periode || !row.Nopeg) return false;
-
-    const key = row.Periode + "-" + row.Nopeg;
-
-    if (seen.has(key)) return false;
-    seen.add(key);
-
-    return true;
-  });
-}
-
 /* ================= RENDER ================= */
 function render() {
   const tbody = document.getElementById("tbody");
   tbody.innerHTML = "";
 
   dataGlobal.forEach((row, i) => {
+
     const tr = document.createElement("tr");
 
     tr.innerHTML = `
-      <td><input value="${row.Periode || ''}" onchange="edit(${i},'Periode',this.value)"></td>
-      <td><input value="${row.Nopeg || ''}" onchange="edit(${i},'Nopeg',this.value)"></td>
-      <td><input value="${row.NIK || ''}" onchange="edit(${i},'NIK',this.value)"></td>
-      <td><input value="${row["Gaji Pokok"] || 0}" onchange="edit(${i},'Gaji Pokok',this.value)"></td>
-      <td><input value="${row.Tunjangan || 0}" onchange="edit(${i},'Tunjangan',this.value)"></td>
-      <td><input value="${row["Realisasi Gaji"] || 0}" onchange="edit(${i},'Realisasi Gaji',this.value)"></td>
+      <td contenteditable oninput="edit(${i},'Periode',this.innerText)">${row.Periode || ''}</td>
+      <td contenteditable oninput="edit(${i},'Nopeg',this.innerText)">${row.Nopeg || ''}</td>
+      <td contenteditable oninput="edit(${i},'NIK',this.innerText)">${row.NIK || ''}</td>
+
+      <td contenteditable oninput="edit(${i},'Gaji Pokok',this.innerText)">${row["Gaji Pokok"] || 0}</td>
+      <td contenteditable oninput="edit(${i},'Tunjangan',this.innerText)">${row.Tunjangan || 0}</td>
+      <td contenteditable oninput="edit(${i},'Realisasi Gaji',this.innerText)">${row["Realisasi Gaji"] || 0}</td>
+
+      <td><button onclick="toggle(${i})">Detail</button></td>
       <td><button class="btn-danger" onclick="del(${i})">Delete</button></td>
     `;
 
+    const detail = document.createElement("tr");
+    detail.style.display = "none";
+    detail.id = "detail-" + i;
+
+    detail.innerHTML = `
+      <td colspan="8">
+        <div class="detail-box">
+          <b>BPJS & Potongan</b><br><br>
+
+          BPJS 4%: ${row["BPJS 4%"] || 0} |
+          BPJS 1%: ${row["BPJS 1%"] || 0} |
+          JKK: ${row.JKK || 0} |
+          JKM: ${row.JKM || 0}<br>
+
+          JHT 3.7%: ${row["JHT 3.7%"] || 0} |
+          JHT 2%: ${row["JHT 2%"] || 0} |
+          JP 2%: ${row["JP 2%"] || 0} |
+          JP 1%: ${row["JP 1%"] || 0}<br>
+
+          Potongan: ${row.Potongan || 0}
+        </div>
+      </td>
+    `;
+
     tbody.appendChild(tr);
+    tbody.appendChild(detail);
   });
 }
 
+/* ================= TOGGLE ================= */
+function toggle(i) {
+  const el = document.getElementById("detail-" + i);
+  el.style.display = el.style.display === "none" ? "table-row" : "none";
+}
+
 /* ================= EDIT ================= */
-function edit(index, field, value) {
-  dataGlobal[index][field] = value;
+function edit(i, field, value) {
+  dataGlobal[i][field] = value;
 }
 
 /* ================= DELETE ================= */
-function del(index) {
-  dataGlobal.splice(index,1);
+function del(i) {
+  dataGlobal.splice(i,1);
   render();
 }
 
@@ -223,11 +237,9 @@ function formatData() {
 async function save() {
   document.getElementById("loading").style.display = "block";
 
-  const payload = formatData();
-
   const { error } = await supabaseClient
     .from("payroll")
-    .insert(payload);
+    .insert(formatData());
 
   document.getElementById("loading").style.display = "none";
 
@@ -241,12 +253,11 @@ async function save() {
 
 /* ================= REPLACE ================= */
 async function replaceData() {
-  if (!confirm("Yakin replace semua data?")) return;
+  if (!confirm("Yakin hapus semua data lama?")) return;
 
   document.getElementById("loading").style.display = "block";
 
-  await supabaseClient.from("payroll").delete().neq("id", 0);
-
+  await supabaseClient.from("payroll").delete().neq("id",0);
   await save();
 
   document.getElementById("loading").style.display = "none";
