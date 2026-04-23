@@ -6,7 +6,8 @@
 <title>Payroll Input Upload</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
+    
+const API_URL = "https://script.google.com/macros/s/AKfycbzlxD3KY7Tl8HHl6Eo_C0Wt5EGDn_nvVC5IN35vjkkddD_uO7zJML8V1lz4Oo5nzGs/exec";
 <style>
 *{
     margin:0;
@@ -92,6 +93,7 @@ th{
 <div class="container">
 
     <input type="file" id="excelFile" accept=".xlsx,.xls">
+    <button onclick="savePayroll()">Save Payroll</button>
 
     <table>
         <thead>
@@ -197,7 +199,37 @@ function hitungTotalAtas(){
     document.getElementById("topRealisasi").innerHTML =
         "Total Realisasi: Rp " + total.toLocaleString("id-ID");
 }
+async function savePayroll(){
 
+    if(payrollData.length <= 1){
+        alert("Data kosong, upload dulu");
+        return;
+    }
+
+    if(!confirm("Simpan data ke spreadsheet?")) return;
+
+    try{
+        const res = await fetch(API_URL,{
+            method:"POST",
+            body: JSON.stringify({
+                action:"savePayrollUpload",
+                data: payrollData.slice(1)
+            })
+        });
+
+        const result = await res.json();
+
+        if(result.success){
+            alert("Data berhasil disimpan");
+        }else{
+            alert("Gagal: " + result.message);
+        }
+
+    }catch(err){
+        console.error(err);
+        alert("Error koneksi ke server");
+    }
+}
 </script>
 
 </body>
