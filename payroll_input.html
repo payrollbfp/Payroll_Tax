@@ -1,13 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payroll Input Upload</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:"California FB", serif;
+}
+body{
+    min-height:100vh;
+    background:linear-gradient(135deg,#d9918f,#6a85c9);
+    padding:30px;
+    color:white;
+}
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:25px;
+    padding:20px 30px;
+    background:rgba(255,255,255,0.15);
+    backdrop-filter:blur(10px);
+    border-radius:20px;
+}
+.container{
+    background:rgba(255,255,255,0.15);
+    backdrop-filter:blur(10px);
+    border-radius:20px;
+    padding:25px;
+}
+input[type=file]{
+    padding:10px;
+    background:white;
+    color:#123;
+    border-radius:8px;
+}
+button{
+    padding:10px 18px;
+    border:none;
+    border-radius:8px;
+    background:white;
+    color:#123;
+    font-weight:bold;
+    cursor:pointer;
+    margin-top:15px;
+    margin-right:10px;
+}
+table{
+    width:100%;
+    margin-top:20px;
+    border-collapse:collapse;
+    background:rgba(255,255,255,0.1);
+}
+th,td{
+    padding:10px;
+    text-align:left;
+    border-bottom:1px solid rgba(255,255,255,0.2);
+}
+th{
+    background:rgba(255,255,255,0.2);
+}
+#errorBox{
+    margin-top:15px;
+    color:yellow;
+    font-size:14px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Payroll Input Upload</h1>
+    <button onclick="window.location.href='dashboard.html'">Back</button>
+</div>
+
+<div class="container">
+
+    <input type="file" id="excelFile" accept=".xlsx,.xls">
+    <button onclick="savePayrollUpload()">Save Payroll</button>
+
+    <div id="errorBox"></div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Periode</th>
+                <th>Nopeg</th>
+                <th>NIK</th>
+                <th>Gaji Pokok</th>
+                <th>Tunjangan</th>
+                <th>Irregular</th>
+                <th>Potongan</th>
+                <th>Realisasi</th>
+            </tr>
+        </thead>
+        <tbody id="previewTable"></tbody>
+    </table>
+
+</div>
+
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbzlxD3KY7Tl8HHl6Eo_C0Wt5EGDn_nvVC5IN35vjkkddD_uO7zJML8V1lz4Oo5nzGs/exec";
+const API_URL = "YOUR_GOOGLE_SCRIPT_URL";
 let payrollData = [];
 
-window.onload = function () {
-    const excelInput = document.getElementById("excelFile");
-    if (excelInput) {
-        excelInput.addEventListener("change", handleFile);
-    }
-};
+document.getElementById("excelFile").addEventListener("change", handleFile);
 
 function handleFile(e){
     const file = e.target.files[0];
@@ -16,17 +119,12 @@ function handleFile(e){
     const reader = new FileReader();
 
     reader.onload = function(event){
-        try {
-            const data = new Uint8Array(event.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            payrollData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, {type:'array'});
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        payrollData = XLSX.utils.sheet_to_json(sheet, {header:1});
 
-            renderPreview();
-        } catch(err){
-            showError("Format file Excel tidak valid");
-            console.error(err);
-        }
+        renderPreview();
     };
 
     reader.readAsArrayBuffer(file);
@@ -35,7 +133,7 @@ function handleFile(e){
 function renderPreview(){
     let rows = "";
 
-    payrollData.slice(1).forEach((row,index) => {
+    payrollData.slice(1).forEach(row => {
         rows += `
         <tr>
             <td>${row[0] || ""}</td>
@@ -46,21 +144,10 @@ function renderPreview(){
             <td>${row[5] || ""}</td>
             <td>${row[14] || ""}</td>
             <td>${row[15] || ""}</td>
-            <td>
-                <button type="button" onclick="deleteRow(${index+1})">Delete</button>
-            </td>
         </tr>`;
     });
 
-    const previewTable = document.getElementById("previewTable");
-    if(previewTable){
-        previewTable.innerHTML = rows;
-    }
-}
-
-function deleteRow(index){
-    payrollData.splice(index,1);
-    renderPreview();
+    document.getElementById("previewTable").innerHTML = rows;
 }
 
 function validatePayrollData(){
@@ -82,9 +169,14 @@ function validatePayrollData(){
         if(!nopeg) errors.push(`Baris ${rowNum}: Nopeg kosong`);
         if(!nik) errors.push(`Baris ${rowNum}: NIK kosong`);
 
-        const calc = gaji + tunjangan + irregular - potongan;
+        if(isNaN(Number(row[3]))) errors.push(`Baris ${rowNum}: Gaji Pokok harus angka`);
+        if(isNaN(Number(row[4]))) errors.push(`Baris ${rowNum}: Tunjangan harus angka`);
+        if(isNaN(Number(row[5]))) errors.push(`Baris ${rowNum}: Irregular harus angka`);
+        if(isNaN(Number(row[14]))) errors.push(`Baris ${rowNum}: Potongan harus angka`);
+        if(isNaN(Number(row[15]))) errors.push(`Baris ${rowNum}: Realisasi harus angka`);
 
-        if(Math.abs(calc - realisasi) > 1){
+        const calc = gaji + tunjangan + irregular - potongan;
+        if(calc !== realisasi){
             errors.push(`Baris ${rowNum}: Realisasi salah, harus ${calc}`);
         }
     });
@@ -93,26 +185,25 @@ function validatePayrollData(){
 }
 
 async function savePayrollUpload(){
-    clearError();
+
+    document.getElementById("errorBox").innerHTML = "";
 
     if(payrollData.length <= 1){
-        showError("Pilih file Excel terlebih dahulu");
+        document.getElementById("errorBox").innerHTML = "Pilih file Excel terlebih dahulu";
         return;
     }
 
     const errors = validatePayrollData();
 
     if(errors.length > 0){
-        showError("<b>Validasi gagal:</b><br>" + errors.join("<br>"));
+        document.getElementById("errorBox").innerHTML =
+            "<b>Validasi gagal:</b><br>" + errors.join("<br>");
         return;
     }
 
     try{
         const res = await fetch(API_URL,{
             method:"POST",
-            headers:{
-                "Content-Type":"application/json"
-            },
             body: JSON.stringify({
                 action:"savePayrollUpload",
                 data: payrollData.slice(1)
@@ -124,57 +215,18 @@ async function savePayrollUpload(){
         if(result.success){
             alert("Upload payroll berhasil disimpan");
             payrollData = [];
-
             document.getElementById("previewTable").innerHTML = "";
             document.getElementById("excelFile").value = "";
         }else{
-            showError(result.message || "Gagal menyimpan data");
+            document.getElementById("errorBox").innerHTML = result.message;
         }
 
     }catch(err){
-        showError("Gagal upload payroll");
+        document.getElementById("errorBox").innerHTML = "Gagal upload payroll";
         console.error(err);
     }
 }
-
-function downloadTemplate(){
-    const templateData = [[
-        "Periode",
-        "Nopeg",
-        "NIK",
-        "Gaji Pokok",
-        "Tunjangan",
-        "Irregular",
-        "BPJS4",
-        "BPJS1",
-        "JKK",
-        "JKM",
-        "JHT37",
-        "JHT2",
-        "JP2",
-        "JP1",
-        "Potongan",
-        "Realisasi"
-    ]];
-
-    const ws = XLSX.utils.aoa_to_sheet(templateData);
-    const wb = XLSX.utils.book_new();
-
-    XLSX.utils.book_append_sheet(wb, ws, "Payroll Template");
-    XLSX.writeFile(wb, "Template_Payroll_Input.xlsx");
-}
-
-function showError(msg){
-    const errorBox = document.getElementById("errorBox");
-    if(errorBox){
-        errorBox.innerHTML = msg;
-    }
-}
-
-function clearError(){
-    const errorBox = document.getElementById("errorBox");
-    if(errorBox){
-        errorBox.innerHTML = "";
-    }
-}
 </script>
+
+</body>
+</html>
