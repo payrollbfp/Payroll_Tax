@@ -199,6 +199,12 @@ function hitungTotalAtas(){
         "Total Realisasi: Rp " + total.toLocaleString("id-ID");
 }
 async function savePayroll(){
+
+    if(payrollData.length <= 1){
+        alert("Upload data dulu");
+        return;
+    }
+
     try{
         const res = await fetch(API_URL,{
             method:"POST",
@@ -210,6 +216,21 @@ async function savePayroll(){
                 data: payrollData.slice(1)
             })
         });
+
+        const result = await res.json();
+        console.log("RESPONSE:", result);
+
+        if(result.success){
+            alert("Data berhasil disimpan");
+        }else{
+            alert("Error: " + result.message);
+        }
+
+    }catch(err){
+        console.error("FETCH ERROR:", err);
+        alert("Error koneksi ke server");
+    }
+}
 
         const text = await res.text();
         console.log("RAW RESPONSE:", text);
