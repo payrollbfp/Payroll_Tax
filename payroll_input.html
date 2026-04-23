@@ -176,15 +176,6 @@ function validatePayrollData(){
         if(isNaN(Number(row[14]))) errors.push(`Baris ${rowNum}: Potongan harus angka`);
         if(isNaN(Number(row[15]))) errors.push(`Baris ${rowNum}: Realisasi harus angka`);
 
-        const calc = gaji + tunjangan + irregular - potongan;
-        if(calc !== realisasi){
-            errors.push(`Baris ${rowNum}: Realisasi salah, harus ${calc}`);
-        }
-    });
-
-    return errors;
-}
-
 async function savePayrollUpload(){
 
     document.getElementById("errorBox").innerHTML = "";
