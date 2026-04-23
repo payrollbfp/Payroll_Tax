@@ -99,6 +99,7 @@ th{
                 <th>Irregular</th>
                 <th>Potongan</th>
                 <th>Realisasi</th>
+                <th>Aksi</th>
             </tr>
         </thead>
         <tbody id="previewTable"></tbody>
@@ -192,6 +193,38 @@ async function savePayrollUpload(){
         document.getElementById("errorBox").innerHTML = "Pilih file Excel terlebih dahulu";
         return;
     }
+    function renderPreview(){
+    let rows = "";
+
+    payrollData.slice(1).forEach((row, index) => {
+        rows += `
+        <tr>
+            <td>${row[0] || ""}</td>
+            <td>${row[1] || ""}</td>
+            <td>${row[2] || ""}</td>
+            <td>${row[3] || ""}</td>
+            <td>${row[4] || ""}</td>
+            <td>${row[5] || ""}</td>
+            <td>${row[14] || ""}</td>
+            <td>${row[15] || ""}</td>
+            <td>
+                <button onclick="deleteRow(${index})" style="background:#ff6b6b;color:white;">
+                    Hapus
+                </button>
+            </td>
+        </tr>`;
+    });
+
+    document.getElementById("previewTable").innerHTML = rows;
+}
+    function deleteRow(index){
+    if(confirm("Yakin ingin menghapus baris ini?")){
+        // +1 karena slice(1) (skip header)
+        payrollData.splice(index + 1, 1);
+
+        renderPreview();
+    }
+}
 
     const errors = validatePayrollData();
 
