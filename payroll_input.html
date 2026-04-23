@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payroll Input</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:"California FB", serif;
+}
+
+body{
+    min-height:100vh;
+    background:linear-gradient(135deg,#d9918f,#6a85c9);
+    padding:30px;
+    color:white;
+}
+
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:25px 35px;
+    margin-bottom:25px;
+    background:rgba(255,255,255,0.15);
+    backdrop-filter:blur(10px);
+    border-radius:20px;
+}
+
+.header h1{
+    font-size:42px;
+}
+
+.back-btn{
+    padding:12px 20px;
+    border:none;
+    border-radius:10px;
+    background:white;
+    color:#123;
+    cursor:pointer;
+    font-size:18px;
+    font-weight:bold;
+}
+
+.container{
+    background:rgba(255,255,255,0.12);
+    backdrop-filter:blur(10px);
+    padding:30px;
+    border-radius:20px;
+}
+
+.form-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:18px;
+}
+
+.input-group{
+    display:flex;
+    flex-direction:column;
+}
+
+.input-group label{
+    margin-bottom:6px;
+    font-size:18px;
+    font-weight:bold;
+}
+
+.input-group input{
+    padding:12px;
+    border:none;
+    border-radius:10px;
+    font-size:16px;
+}
+
+.button-group{
+    margin-top:25px;
+    display:flex;
+    gap:15px;
+}
+
+.save-btn{
+    padding:12px 22px;
+    border:none;
+    border-radius:10px;
+    background:white;
+    color:#123;
+    cursor:pointer;
+    font-size:18px;
+    font-weight:bold;
+}
+
+table{
+    width:100%;
+    margin-top:30px;
+    border-collapse:collapse;
+    background:rgba(255,255,255,0.1);
+    border-radius:15px;
+    overflow:hidden;
+}
+
+th, td{
+    padding:12px;
+    text-align:left;
+}
+
+th{
+    background:rgba(255,255,255,0.2);
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Payroll Input</h1>
+    <button class="back-btn" onclick="window.location.href='dashboard.html'">Back</button>
+</div>
+
+<div class="container">
+
+    <div class="form-grid">
+        <div class="input-group"><label>Periode</label><input type="month" id="periode"></div>
+        <div class="input-group"><label>Nopeg</label><input type="text" id="nopeg"></div>
+        <div class="input-group"><label>NIK</label><input type="text" id="nik"></div>
+        <div class="input-group"><label>Gaji Pokok</label><input type="number" id="gaji_pokok"></div>
+
+        <div class="input-group"><label>Tunjangan</label><input type="number" id="tunjangan"></div>
+        <div class="input-group"><label>Irreguler Income</label><input type="number" id="irregular"></div>
+        <div class="input-group"><label>BPJS Kesehatan 4%</label><input type="number" id="bpjs4"></div>
+        <div class="input-group"><label>BPJS Kesehatan 1%</label><input type="number" id="bpjs1"></div>
+
+        <div class="input-group"><label>JKK</label><input type="number" id="jkk"></div>
+        <div class="input-group"><label>JKM</label><input type="number" id="jkm"></div>
+        <div class="input-group"><label>JHT 3.7%</label><input type="number" id="jht37"></div>
+        <div class="input-group"><label>JHT 2%</label><input type="number" id="jht2"></div>
+
+        <div class="input-group"><label>JP 2%</label><input type="number" id="jp2"></div>
+        <div class="input-group"><label>JP 1%</label><input type="number" id="jp1"></div>
+        <div class="input-group"><label>Potongan</label><input type="number" id="potongan"></div>
+        <div class="input-group"><label>Realisasi Gaji</label><input type="number" id="realisasi"></div>
+    </div>
+
+    <div class="button-group">
+        <button class="save-btn" onclick="savePayrollInput()">Save Payroll</button>
+        <button class="save-btn" onclick="calculateRealisasi()">Calculate</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Periode</th>
+                <th>Nopeg</th>
+                <th>NIK</th>
+                <th>Gaji Pokok</th>
+                <th>Tunjangan</th>
+                <th>Irreguler</th>
+                <th>Potongan</th>
+                <th>Realisasi Gaji</th>
+            </tr>
+        </thead>
+        <tbody id="payrollTable"></tbody>
+    </table>
+
+</div>
+
+<script>
+function calculateRealisasi(){
+    let gaji = Number(document.getElementById("gaji_pokok").value) || 0;
+    let tunjangan = Number(document.getElementById("tunjangan").value) || 0;
+    let irregular = Number(document.getElementById("irregular").value) || 0;
+    let bpjs1 = Number(document.getElementById("bpjs1").value) || 0;
+    let jht2 = Number(document.getElementById("jht2").value) || 0;
+    let jp1 = Number(document.getElementById("jp1").value) || 0;
+    let potongan = Number(document.getElementById("potongan").value) || 0;
+
+    let realisasi = (gaji + tunjangan + irregular) - (bpjs1 + jht2 + jp1 + potongan);
+
+    document.getElementById("realisasi").value = realisasi;
+}
+
+function savePayrollInput(){
+    alert("Save Payroll Input ke Google Apps Script");
+}
+</script>
+
+</body>
+</html>
