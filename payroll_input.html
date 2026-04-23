@@ -182,8 +182,54 @@ function calculateRealisasi(){
     document.getElementById("realisasi").value = realisasi;
 }
 
-function savePayrollInput(){
-    alert("Save Payroll Input ke Google Apps Script");
+const API_URL = "YOUR_GOOGLE_SCRIPT_URL";
+
+async function savePayrollInput(){
+
+    calculateRealisasi();
+
+    const formData = new URLSearchParams();
+    formData.append("action", "savePayrollInput");
+    formData.append("periode", document.getElementById("periode").value);
+    formData.append("nopeg", document.getElementById("nopeg").value);
+    formData.append("nik", document.getElementById("nik").value);
+    formData.append("gaji_pokok", document.getElementById("gaji_pokok").value);
+    formData.append("tunjangan", document.getElementById("tunjangan").value);
+    formData.append("irregular", document.getElementById("irregular").value);
+    formData.append("bpjs4", document.getElementById("bpjs4").value);
+    formData.append("bpjs1", document.getElementById("bpjs1").value);
+    formData.append("jkk", document.getElementById("jkk").value);
+    formData.append("jkm", document.getElementById("jkm").value);
+    formData.append("jht37", document.getElementById("jht37").value);
+    formData.append("jht2", document.getElementById("jht2").value);
+    formData.append("jp2", document.getElementById("jp2").value);
+    formData.append("jp1", document.getElementById("jp1").value);
+    formData.append("potongan", document.getElementById("potongan").value);
+    formData.append("realisasi", document.getElementById("realisasi").value);
+
+    try{
+        const res = await fetch(API_URL,{
+            method:"POST",
+            body:formData
+        });
+
+        const result = await res.json();
+
+        if(result.success){
+            alert("Payroll berhasil disimpan");
+            clearForm();
+        }else{
+            alert(result.message || "Gagal simpan payroll");
+        }
+
+    }catch(err){
+        console.error(err);
+        alert("Gagal koneksi ke server");
+    }
+}
+
+function clearForm(){
+    document.querySelectorAll("input").forEach(i => i.value = "");
 }
 </script>
 
