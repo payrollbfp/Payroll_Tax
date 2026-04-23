@@ -2,70 +2,31 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Payroll System</title>
+<title>Payroll Final</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <style>
-body {
-  font-family: 'Segoe UI';
-  background:#eef2f7;
-  margin:0;
-}
-
-.header {
-  background:#1e293b;
-  color:white;
-  padding:15px;
-}
-
-.container {
-  padding:20px;
-}
-
+body { font-family:Segoe UI; background:#eef2f7; margin:0; }
+.header { background:#1e293b; color:white; padding:15px; }
+.container { padding:20px; }
 .card {
-  background:white;
-  padding:20px;
-  border-radius:12px;
+  background:white; padding:20px; border-radius:12px;
   box-shadow:0 6px 15px rgba(0,0,0,0.1);
 }
-
 button {
-  border:none;
-  padding:8px 14px;
-  margin:4px;
-  border-radius:6px;
-  cursor:pointer;
+  border:none; padding:8px 12px; margin:4px;
+  border-radius:6px; cursor:pointer;
 }
+.btn1{background:#3b82f6;color:white;}
+.btn2{background:#10b981;color:white;}
+.btn3{background:#f59e0b;color:white;}
+.btn4{background:#ef4444;color:white;}
 
-.btn-primary {background:#3b82f6;color:white;}
-.btn-success {background:#10b981;color:white;}
-.btn-warning {background:#f59e0b;color:white;}
-.btn-danger {background:#ef4444;color:white;}
-
-table {
-  width:100%;
-  border-collapse:collapse;
-  margin-top:20px;
-}
-
-th, td {
-  padding:8px;
-  border:1px solid #ddd;
-  font-size:12px;
-}
-
-th {
-  background:#334155;
-  color:white;
-}
-
-.loading {
-  display:none;
-  color:#3b82f6;
-  font-weight:bold;
-}
+table { width:100%; border-collapse:collapse; margin-top:20px; }
+th,td { padding:8px; border:1px solid #ddd; font-size:12px; }
+th { background:#334155; color:white; }
 
 .detail-box {
   background:#f1f5f9;
@@ -73,24 +34,25 @@ th {
   border-radius:8px;
   line-height:1.6;
 }
+.loading { display:none; color:#3b82f6; }
 </style>
 </head>
 
 <body>
 
 <div class="header">
-  <h2>Payroll Upload System</h2>
+<h2>Payroll System</h2>
 </div>
 
 <div class="container">
 <div class="card">
 
-<input type="file" id="fileInput" accept=".xlsx,.csv">
-<button class="btn-primary" onclick="preview()">Preview</button>
-<button class="btn-success" onclick="save()">Save</button>
-<button class="btn-warning" onclick="replaceData()">Replace Data</button>
+<input type="file" id="fileInput">
+<button class="btn1" onclick="preview()">Preview</button>
+<button class="btn2" onclick="save()">Save</button>
+<button class="btn3" onclick="replaceData()">Replace</button>
 
-<p class="loading" id="loading">⏳ Processing...</p>
+<p id="loading" class="loading">⏳ Processing...</p>
 
 <table>
 <thead>
@@ -112,34 +74,28 @@ th {
 </div>
 
 <script>
-/* ================= CONFIG ================= */
-const SUPABASE_URL = "https://nwrbjbwjmkahjuuyizfq.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmJqYndqbWthaGp1dXlpemZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MjM4OTIsImV4cCI6MjA5MjQ5OTg5Mn0.n67pONlkoMqZguyoTwQQFJ0VBRfPaIVuVlPGxsajaGA";
-
+const SUPABASE_URL = "https://YOUR_PROJECT.supabase.co";
+const SUPABASE_KEY = "YOUR_ANON_KEY";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* ================= STATE ================= */
 let dataGlobal = [];
 
 /* ================= PREVIEW ================= */
 function preview() {
   const file = document.getElementById("fileInput").files[0];
-  if (!file) return alert("Pilih file dulu");
+  if (!file) return alert("Pilih file");
 
-  document.getElementById("loading").style.display = "block";
+  loading(true);
 
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = e => {
     const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
     const sheet = wb.Sheets[wb.SheetNames[0]];
-    const json = XLSX.utils.sheet_to_json(sheet);
+    dataGlobal = XLSX.utils.sheet_to_json(sheet);
 
-    dataGlobal = json;
     render();
-
-    document.getElementById("loading").style.display = "none";
+    loading(false);
   };
-
   reader.readAsArrayBuffer(file);
 }
 
@@ -150,117 +106,119 @@ function render() {
 
   dataGlobal.forEach((row, i) => {
 
-    const tr = document.createElement("tr");
+    const main = document.createElement("tr");
 
-    tr.innerHTML = `
-      <td contenteditable oninput="edit(${i},'Periode',this.innerText)">${row.Periode || ''}</td>
-      <td contenteditable oninput="edit(${i},'Nopeg',this.innerText)">${row.Nopeg || ''}</td>
-      <td contenteditable oninput="edit(${i},'NIK',this.innerText)">${row.NIK || ''}</td>
-
-      <td contenteditable oninput="edit(${i},'Gaji Pokok',this.innerText)">${row["Gaji Pokok"] || 0}</td>
-      <td contenteditable oninput="edit(${i},'Tunjangan',this.innerText)">${row.Tunjangan || 0}</td>
-      <td contenteditable oninput="edit(${i},'Realisasi Gaji',this.innerText)">${row["Realisasi Gaji"] || 0}</td>
-
+    main.innerHTML = `
+      <td>${row.Periode}</td>
+      <td>${row.Nopeg}</td>
+      <td>${row.NIK}</td>
+      <td>${row["Gaji Pokok"]}</td>
+      <td>${row.Tunjangan}</td>
+      <td>${row["Realisasi Gaji"]}</td>
       <td><button onclick="toggle(${i})">Detail</button></td>
-      <td><button class="btn-danger" onclick="del(${i})">Delete</button></td>
+      <td><button class="btn4" onclick="del(${i})">Delete</button></td>
     `;
 
     const detail = document.createElement("tr");
     detail.style.display = "none";
-    detail.id = "detail-" + i;
+    detail.id = "d"+i;
 
     detail.innerHTML = `
       <td colspan="8">
         <div class="detail-box">
-          <b>BPJS & Potongan</b><br><br>
 
-          BPJS 4%: ${row["BPJS 4%"] || 0} |
-          BPJS 1%: ${row["BPJS 1%"] || 0} |
-          JKK: ${row.JKK || 0} |
-          JKM: ${row.JKM || 0}<br>
+        <b>BPJS & Komponen:</b><br><br>
 
-          JHT 3.7%: ${row["JHT 3.7%"] || 0} |
-          JHT 2%: ${row["JHT 2%"] || 0} |
-          JP 2%: ${row["JP 2%"] || 0} |
-          JP 1%: ${row["JP 1%"] || 0}<br>
+        BPJS 4%: ${row["BPJS 4%"]} |
+        BPJS 1%: ${row["BPJS 1%"]}<br>
 
-          Potongan: ${row.Potongan || 0}
+        JKK: ${row.JKK} |
+        JKM: ${row.JKM}<br>
+
+        JHT 3.7%: ${row["JHT 3.7%"]} |
+        JHT 2%: ${row["JHT 2%"]}<br>
+
+        JP 2%: ${row["JP 2%"]} |
+        JP 1%: ${row["JP 1%"]}<br>
+
+        Potongan: ${row.Potongan}
+
         </div>
       </td>
     `;
 
-    tbody.appendChild(tr);
+    tbody.appendChild(main);
     tbody.appendChild(detail);
   });
 }
 
 /* ================= TOGGLE ================= */
-function toggle(i) {
-  const el = document.getElementById("detail-" + i);
+function toggle(i){
+  const el = document.getElementById("d"+i);
   el.style.display = el.style.display === "none" ? "table-row" : "none";
 }
 
-/* ================= EDIT ================= */
-function edit(i, field, value) {
-  dataGlobal[i][field] = value;
-}
-
 /* ================= DELETE ================= */
-function del(i) {
+function del(i){
   dataGlobal.splice(i,1);
   render();
 }
 
 /* ================= FORMAT ================= */
-function formatData() {
-  return dataGlobal.map(r => ({
-    periode: r.Periode,
-    nopeg: r.Nopeg,
-    nik: r.NIK,
-    gaji_pokok: Number(r["Gaji Pokok"] || 0),
-    tunjangan: Number(r.Tunjangan || 0),
-    irregular: Number(r["Irregular Income"] || 0),
-    bpjs4: Number(r["BPJS 4%"] || 0),
-    bpjs1: Number(r["BPJS 1%"] || 0),
-    jkk: Number(r.JKK || 0),
-    jkm: Number(r.JKM || 0),
-    jht37: Number(r["JHT 3.7%"] || 0),
-    jht2: Number(r["JHT 2%"] || 0),
-    jp2: Number(r["JP 2%"] || 0),
-    jp1: Number(r["JP 1%"] || 0),
-    potongan: Number(r.Potongan || 0),
-    realisasi: Number(r["Realisasi Gaji"] || 0)
+function formatData(){
+  return dataGlobal.map(r=>({
+    periode:r.Periode,
+    nopeg:r.Nopeg,
+    nik:r.NIK,
+    gaji_pokok:Number(r["Gaji Pokok"]),
+    tunjangan:Number(r.Tunjangan),
+    irregular:Number(r["Irregular Income"]),
+    bpjs4:Number(r["BPJS 4%"]),
+    bpjs1:Number(r["BPJS 1%"]),
+    jkk:Number(r.JKK),
+    jkm:Number(r.JKM),
+    jht37:Number(r["JHT 3.7%"]),
+    jht2:Number(r["JHT 2%"]),
+    jp2:Number(r["JP 2%"]),
+    jp1:Number(r["JP 1%"]),
+    potongan:Number(r.Potongan),
+    realisasi:Number(r["Realisasi Gaji"])
   }));
 }
 
 /* ================= SAVE ================= */
-async function save() {
-  document.getElementById("loading").style.display = "block";
+async function save(){
+  loading(true);
 
   const { error } = await supabaseClient
     .from("payroll")
     .insert(formatData());
 
-  document.getElementById("loading").style.display = "none";
+  loading(false);
 
-  if (error) {
+  if(error){
     console.error(error);
-    alert("❌ Gagal simpan");
-  } else {
-    alert("✅ Berhasil simpan");
+    alert("❌ Gagal");
+  }else{
+    alert("✅ Berhasil");
   }
 }
 
 /* ================= REPLACE ================= */
-async function replaceData() {
-  if (!confirm("Yakin hapus semua data lama?")) return;
+async function replaceData(){
+  if(!confirm("Hapus semua data lama?")) return;
 
-  document.getElementById("loading").style.display = "block";
+  loading(true);
 
   await supabaseClient.from("payroll").delete().neq("id",0);
   await save();
 
-  document.getElementById("loading").style.display = "none";
+  loading(false);
+}
+
+/* ================= LOADING ================= */
+function loading(x){
+  document.getElementById("loading").style.display = x?"block":"none";
 }
 </script>
 
