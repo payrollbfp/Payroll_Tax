@@ -6,7 +6,6 @@
 <title>Payroll Input Upload</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
 <style>
 *{
@@ -72,12 +71,19 @@ th{
 
 <body>
 
-<div id="topRealisasi" style="margin-bottom:15px;padding:15px;background:rgba(255,255,255,0.15);border-radius:15px;font-weight:bold;">
+<!-- TOTAL REALISASI -->
+<div id="topRealisasi" style="
+    margin-bottom:15px;
+    padding:15px;
+    background:rgba(255,255,255,0.15);
+    border-radius:15px;
+    font-weight:bold;">
     Total Realisasi: Rp 0
 </div>
 
 <div class="header">
     <h1>Payroll Input Upload</h1>
+    <button onclick="window.location.href='dashboard.html'">Back</button>
 </div>
 
 <div class="container">
@@ -113,33 +119,39 @@ th{
 </div>
 
 <script>
-// ✅ KONFIG SUPABASE (SUDAH BENAR)
-const supabaseUrl = "https://nwrbjbwjmkahjuuyizfq.supabase.co";
-const supabaseKey = "sb_publishable_vh7_gqRI-ZTfXedmQUxzdg_w5MWZo2o";
 
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+const API_URL = "https://script.google.com/macros/s/AKfycbzlxD3KY7Tl8HHl6Eo_C0Wt5EGDn_nvVC5IN35vjkkddD_uO7zJML8V1lz4Oo5nzGs/exec";
 
 let payrollData = [];
 
-// UPLOAD EXCEL
+// UPLOAD FILE
 document.getElementById("excelFile").addEventListener("change", function(e){
+
     const file = e.target.files[0];
     if(!file) return;
 
     const reader = new FileReader();
 
     reader.onload = function(evt){
-        const data = new Uint8Array(evt.target.result);
-        const workbook = XLSX.read(data, {type:'array'});
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        try{
+            const data = new Uint8Array(evt.target.result);
+            const workbook = XLSX.read(data, {type:'array'});
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
-        payrollData = XLSX.utils.sheet_to_json(sheet, {
-            header:1,
-            defval:""
-        });
+            payrollData = XLSX.utils.sheet_to_json(sheet, {
+                header:1,
+                defval:""
+            });
 
-        renderPreview();
-        hitungTotal();
+            console.log("DATA:", payrollData);
+
+            renderPreview();
+            hitungTotal();
+
+        }catch(err){
+            console.error(err);
+            alert("Gagal membaca file Excel");
+        }
     };
 
     reader.readAsArrayBuffer(file);
@@ -147,6 +159,7 @@ document.getElementById("excelFile").addEventListener("change", function(e){
 
 // RENDER TABLE
 function renderPreview(){
+
     let html = "";
 
     for(let i = 1; i < payrollData.length; i++){
@@ -158,21 +171,28 @@ function renderPreview(){
             html += `<td>${row[j] || ""}</td>`;
         }
 
-        html += `<td><button onclick="deleteRow(${i-1})" style="background:red;color:white;">Hapus</button></td>`;
+        html += `<td>
+            <button onclick="deleteRow(${i-1})" style="background:red;color:white;">
+                Hapus
+            </button>
+        </td>`;
+
         html += "</tr>";
     }
 
     document.getElementById("previewTable").innerHTML = html;
 }
 
-// DELETE
+// DELETE ROW
 function deleteRow(index){
-    payrollData.splice(index + 1, 1);
-    renderPreview();
-    hitungTotal();
+    if(confirm("Hapus baris ini?")){
+        payrollData.splice(index + 1, 1);
+        renderPreview();
+        hitungTotal();
+    }
 }
 
-// TOTAL
+// HITUNG TOTAL REALISASI
 function hitungTotal(){
     let total = 0;
 
@@ -184,7 +204,7 @@ function hitungTotal(){
         "Total Realisasi: Rp " + total.toLocaleString("id-ID");
 }
 
-// SAVE KE SUPABASE
+// SAVE KE GOOGLE SHEET
 async function savePayroll(){
 
     if(payrollData.length <= 1){
@@ -193,41 +213,31 @@ async function savePayroll(){
     }
 
     try{
-        const dataInsert = payrollData.slice(1).map(row => ({
-            periode: row[0] || "",
-            nopeg: row[1] || "",
-            nik: row[2] || "",
-            gaji_pokok: Number(row[3]) || 0,
-            tunjangan: Number(row[4]) || 0,
-            irregular: Number(row[5]) || 0,
-            bpjs4: Number(row[6]) || 0,
-            bpjs1: Number(row[7]) || 0,
-            jkk: Number(row[8]) || 0,
-            jkm: Number(row[9]) || 0,
-            jht37: Number(row[10]) || 0,
-            jht2: Number(row[11]) || 0,
-            jp2: Number(row[12]) || 0,
-            jp1: Number(row[13]) || 0,
-            potongan: Number(row[14]) || 0,
-            realisasi: Number(row[15]) || 0
-        }));
+        const res = await fetch(API_URL,{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body: JSON.stringify({
+                action:"savePayrollUpload",
+                data: payrollData.slice(1)
+            })
+        });
 
-        const { error } = await supabase
-            .from("payroll")
-            .insert(dataInsert);
+        const result = await res.json();
 
-        if(error){
-            console.error(error);
-            alert("Gagal simpan: " + error.message);
+        if(result.success){
+            alert("Data berhasil disimpan");
         }else{
-            alert("Data berhasil disimpan ke database 🚀");
+            alert("Error: " + result.message);
         }
 
     }catch(err){
         console.error(err);
-        alert("Error sistem");
+        alert("Error koneksi ke server");
     }
 }
+
 </script>
 
 </body>
