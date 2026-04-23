@@ -207,13 +207,16 @@ function hitungTotal(){
 // SAVE KE GOOGLE SHEET
 async function savePayroll(){
 
+    console.log("TOMBOL DIKLIK"); // 👈 TAMBAH INI
+
     if(payrollData.length <= 1){
         alert("Upload data dulu");
         return;
     }
 
-    try{
-        const res = await fetch(API_URL,{
+    console.log("DATA DIKIRIM:", payrollData.slice(1)); // 👈 TAMBAH INI
+
+       const res = await fetch(API_URL,{
     method:"POST",
     headers:{
         "Content-Type":"application/json"
@@ -224,22 +227,10 @@ async function savePayroll(){
     })
 });
 
+console.log("STATUS:", res.status); // 👈 TAMBAH
+
 const text = await res.text();
 console.log("RESPONSE:", text);
-
-        const result = await res.json();
-
-        if(result.success){
-            alert("Data berhasil disimpan");
-        }else{
-            alert("Error: " + result.message);
-        }
-
-    }catch(err){
-        console.error(err);
-        alert("Error koneksi ke server");
-    }
-}
 
 </script>
 
