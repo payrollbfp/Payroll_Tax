@@ -1,43 +1,104 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Payroll Upload</title>
+<title>Payroll Advanced</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <style>
-body{
-    font-family:Arial;
-    background:#6a85c9;
-    padding:20px;
-    color:white;
+body {
+  font-family: 'Segoe UI';
+  background: #eef2f7;
+  margin: 0;
 }
-button{
-    padding:10px;
-    margin:10px 0;
+
+.header {
+  background: #1e293b;
+  color: white;
+  padding: 15px;
 }
-table{
-    width:100%;
-    background:white;
-    color:black;
+
+.container {
+  padding: 20px;
 }
-td,th{
-    padding:8px;
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+}
+
+button {
+  border: none;
+  padding: 8px 14px;
+  margin: 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-primary { background:#3b82f6; color:white; }
+.btn-success { background:#10b981; color:white; }
+.btn-danger { background:#ef4444; color:white; }
+.btn-warning { background:#f59e0b; color:white; }
+
+input {
+  padding:6px;
+  border:1px solid #ccc;
+  border-radius:5px;
+}
+
+table {
+  width:100%;
+  border-collapse: collapse;
+  margin-top:20px;
+}
+
+th, td {
+  padding:8px;
+  border:1px solid #ddd;
+  font-size:12px;
+}
+
+th {
+  background:#334155;
+  color:white;
+}
+
+td input {
+  width:100%;
+  border:none;
+  background:transparent;
+}
+
+.loading {
+  display:none;
+  color:#3b82f6;
+  font-weight:bold;
 }
 </style>
 </head>
 
 <body>
 
-<h2>Payroll Upload</h2>
+<div class="header">
+  <h2>Payroll Upload Advanced</h2>
+</div>
 
-<input type="file" id="file">
-<button onclick="save()">Save ke Database</button>
+<div class="container">
+<div class="card">
 
-<table border="1">
+<input type="file" id="fileInput" accept=".xlsx,.csv">
+<button class="btn-primary" onclick="preview()">Preview</button>
+<button class="btn-success" onclick="save()">Save</button>
+<button class="btn-warning" onclick="replaceData()">Replace Data</button>
+
+<p class="loading" id="loading">⏳ Processing...</p>
+
+<table>
 <thead>
 <tr>
 <th>Periode</th>
@@ -45,98 +106,150 @@ td,th{
 <th>NIK</th>
 <th>Gaji</th>
 <th>Tunjangan</th>
-<th>Irregular</th>
-<th>BPJS4</th>
-<th>BPJS1</th>
-<th>JKK</th>
-<th>JKM</th>
-<th>JHT37</th>
-<th>JHT2</th>
-<th>JP2</th>
-<th>JP1</th>
-<th>Potongan</th>
 <th>Realisasi</th>
+<th>Aksi</th>
 </tr>
 </thead>
-<tbody id="tabel"></tbody>
+<tbody id="tbody"></tbody>
 </table>
 
+</div>
+</div>
+
 <script>
-// 🔥 GANTI DENGAN PUNYAMU
-const supabaseUrl = "https://nwrbjbwjmkahjuuyizfq.supabase.co";
-const supabaseKey = "sb_publishable_xxxxx";
+/* ================= CONFIG ================= */
+const SUPABASE_URL = "https://nwrbjbwjmkahjuuyizfq.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmJqYndqbWthaGp1dXlpemZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MjM4OTIsImV4cCI6MjA5MjQ5OTg5Mn0.n67pONlkoMqZguyoTwQQFJ0VBRfPaIVuVlPGxsajaGA";
 
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let dataExcel = [];
+/* ================= STATE ================= */
+let dataGlobal = [];
 
-// READ EXCEL
-document.getElementById("file").addEventListener("change", e=>{
-    const file = e.target.files[0];
-    const reader = new FileReader();
+/* ================= PREVIEW ================= */
+function preview() {
+  const file = document.getElementById("fileInput").files[0];
+  if (!file) return alert("Pilih file");
 
-    reader.onload = evt=>{
-        const data = new Uint8Array(evt.target.result);
-        const wb = XLSX.read(data, {type:'array'});
-        const ws = wb.Sheets[wb.SheetNames[0]];
+  document.getElementById("loading").style.display = "block";
 
-        dataExcel = XLSX.utils.sheet_to_json(ws,{header:1});
-        render();
-    };
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(sheet);
 
-    reader.readAsArrayBuffer(file);
-});
+    dataGlobal = validateData(json);
+    render();
 
-// TAMPILKAN
-function render(){
-    let html="";
-    for(let i=1;i<dataExcel.length;i++){
-        html+="<tr>";
-        for(let j=0;j<16;j++){
-            html+=`<td>${dataExcel[i][j]||""}</td>`;
-        }
-        html+="</tr>";
-    }
-    document.getElementById("tabel").innerHTML=html;
+    document.getElementById("loading").style.display = "none";
+  };
+
+  reader.readAsArrayBuffer(file);
 }
 
-// SAVE
-async function save(){
+/* ================= VALIDATION ================= */
+function validateData(data) {
+  const seen = new Set();
 
-    if(dataExcel.length<=1){
-        alert("Upload dulu!");
-        return;
-    }
+  return data.filter(row => {
+    if (!row.Periode || !row.Nopeg) return false;
 
-    const payload = dataExcel.slice(1).map(r=>({
-        periode:r[0],
-        nopeg:r[1],
-        nik:r[2],
-        gaji_pokok:Number(r[3])||0,
-        tunjangan:Number(r[4])||0,
-        irregular:Number(r[5])||0,
-        bpjs4:Number(r[6])||0,
-        bpjs1:Number(r[7])||0,
-        jkk:Number(r[8])||0,
-        jkm:Number(r[9])||0,
-        jht37:Number(r[10])||0,
-        jht2:Number(r[11])||0,
-        jp2:Number(r[12])||0,
-        jp1:Number(r[13])||0,
-        potongan:Number(r[14])||0,
-        realisasi:Number(r[15])||0
-    }));
+    const key = row.Periode + "-" + row.Nopeg;
 
-    const {error} = await supabase
-        .from("payroll")
-        .insert(payload);
+    if (seen.has(key)) return false;
+    seen.add(key);
 
-    if(error){
-        console.error(error);
-        alert("Gagal: "+error.message);
-    }else{
-        alert("Berhasil masuk database 🚀");
-    }
+    return true;
+  });
+}
+
+/* ================= RENDER ================= */
+function render() {
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = "";
+
+  dataGlobal.forEach((row, i) => {
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td><input value="${row.Periode || ''}" onchange="edit(${i},'Periode',this.value)"></td>
+      <td><input value="${row.Nopeg || ''}" onchange="edit(${i},'Nopeg',this.value)"></td>
+      <td><input value="${row.NIK || ''}" onchange="edit(${i},'NIK',this.value)"></td>
+      <td><input value="${row["Gaji Pokok"] || 0}" onchange="edit(${i},'Gaji Pokok',this.value)"></td>
+      <td><input value="${row.Tunjangan || 0}" onchange="edit(${i},'Tunjangan',this.value)"></td>
+      <td><input value="${row["Realisasi Gaji"] || 0}" onchange="edit(${i},'Realisasi Gaji',this.value)"></td>
+      <td><button class="btn-danger" onclick="del(${i})">Delete</button></td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+
+/* ================= EDIT ================= */
+function edit(index, field, value) {
+  dataGlobal[index][field] = value;
+}
+
+/* ================= DELETE ================= */
+function del(index) {
+  dataGlobal.splice(index,1);
+  render();
+}
+
+/* ================= FORMAT ================= */
+function formatData() {
+  return dataGlobal.map(r => ({
+    periode: r.Periode,
+    nopeg: r.Nopeg,
+    nik: r.NIK,
+    gaji_pokok: Number(r["Gaji Pokok"] || 0),
+    tunjangan: Number(r.Tunjangan || 0),
+    irregular: Number(r["Irregular Income"] || 0),
+    bpjs4: Number(r["BPJS 4%"] || 0),
+    bpjs1: Number(r["BPJS 1%"] || 0),
+    jkk: Number(r.JKK || 0),
+    jkm: Number(r.JKM || 0),
+    jht37: Number(r["JHT 3.7%"] || 0),
+    jht2: Number(r["JHT 2%"] || 0),
+    jp2: Number(r["JP 2%"] || 0),
+    jp1: Number(r["JP 1%"] || 0),
+    potongan: Number(r.Potongan || 0),
+    realisasi: Number(r["Realisasi Gaji"] || 0)
+  }));
+}
+
+/* ================= SAVE ================= */
+async function save() {
+  document.getElementById("loading").style.display = "block";
+
+  const payload = formatData();
+
+  const { error } = await supabaseClient
+    .from("payroll")
+    .insert(payload);
+
+  document.getElementById("loading").style.display = "none";
+
+  if (error) {
+    console.error(error);
+    alert("❌ Gagal simpan");
+  } else {
+    alert("✅ Berhasil simpan");
+  }
+}
+
+/* ================= REPLACE ================= */
+async function replaceData() {
+  if (!confirm("Yakin replace semua data?")) return;
+
+  document.getElementById("loading").style.display = "block";
+
+  await supabaseClient.from("payroll").delete().neq("id", 0);
+
+  await save();
+
+  document.getElementById("loading").style.display = "none";
 }
 </script>
 
