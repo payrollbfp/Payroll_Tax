@@ -199,22 +199,34 @@ function hitungTotalAtas(){
         "Total Realisasi: Rp " + total.toLocaleString("id-ID");
 }
 async function savePayroll(){
-
-    if(payrollData.length <= 1){
-        alert("Data kosong, upload dulu");
-        return;
-    }
-
-    if(!confirm("Simpan data ke spreadsheet?")) return;
-
     try{
         const res = await fetch(API_URL,{
             method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
             body: JSON.stringify({
                 action:"savePayrollUpload",
                 data: payrollData.slice(1)
             })
         });
+
+        const text = await res.text();
+        console.log("RAW RESPONSE:", text);
+
+        const result = JSON.parse(text);
+
+        if(result.success){
+            alert("Data berhasil disimpan");
+        }else{
+            alert("Error: " + result.message);
+        }
+
+    }catch(err){
+        console.error("FETCH ERROR:", err);
+        alert("Error koneksi ke server (lihat console)");
+    }
+}
 
         const result = await res.json();
 
