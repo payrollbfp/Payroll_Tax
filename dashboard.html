@@ -124,17 +124,21 @@ function logout() {
 }
 
 function openMenu(menu){
-    if(menu === "master"){
-        window.location.href = "master_payroll.html";
-    }
-    else if(menu === "payroll"){
-        window.location.href = "payroll_input.html";
-    }
-    else if(menu === "tax"){
-        window.location.href = "tax_engine.html";
-    }
-    else if(menu === "report"){
-        window.location.href = "report.html";
+    switch(menu){
+        case "master":
+            window.location.href = "master_payroll.html";
+            break;
+        case "payroll":
+            window.location.href = "payroll_input.html";
+            break;
+        case "tax":
+            window.location.href = "tax_engine.html";
+            break;
+        case "report":
+            window.location.href = "report.html";
+            break;
+        default:
+            alert("Menu tidak ditemukan");
     }
 }
 </script>
