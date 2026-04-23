@@ -2,7 +2,12 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbzlxD3KY7Tl8HHl6Eo_C0Wt5EGDn_nvVC5IN35vjkkddD_uO7zJML8V1lz4Oo5nzGs/exec";
 let payrollData = [];
 
-document.getElementById("excelFile").addEventListener("change", handleFile);
+window.onload = function () {
+    const excelInput = document.getElementById("excelFile");
+    if (excelInput) {
+        excelInput.addEventListener("change", handleFile);
+    }
+};
 
 function handleFile(e){
     const file = e.target.files[0];
@@ -11,12 +16,17 @@ function handleFile(e){
     const reader = new FileReader();
 
     reader.onload = function(event){
-        const data = new Uint8Array(event.target.result);
-        const workbook = XLSX.read(data, {type:'array'});
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        payrollData = XLSX.utils.sheet_to_json(sheet, {header:1});
+        try {
+            const data = new Uint8Array(event.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            payrollData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-        renderPreview();
+            renderPreview();
+        } catch(err){
+            showError("Format file Excel tidak valid");
+            console.error(err);
+        }
     };
 
     reader.readAsArrayBuffer(file);
@@ -37,12 +47,15 @@ function renderPreview(){
             <td>${row[14] || ""}</td>
             <td>${row[15] || ""}</td>
             <td>
-                <button onclick="deleteRow(${index+1})">Delete</button>
+                <button type="button" onclick="deleteRow(${index+1})">Delete</button>
             </td>
         </tr>`;
     });
 
-    document.getElementById("previewTable").innerHTML = rows;
+    const previewTable = document.getElementById("previewTable");
+    if(previewTable){
+        previewTable.innerHTML = rows;
+    }
 }
 
 function deleteRow(index){
@@ -69,14 +82,9 @@ function validatePayrollData(){
         if(!nopeg) errors.push(`Baris ${rowNum}: Nopeg kosong`);
         if(!nik) errors.push(`Baris ${rowNum}: NIK kosong`);
 
-        if(isNaN(Number(row[3]))) errors.push(`Baris ${rowNum}: Gaji Pokok harus angka`);
-        if(isNaN(Number(row[4]))) errors.push(`Baris ${rowNum}: Tunjangan harus angka`);
-        if(isNaN(Number(row[5]))) errors.push(`Baris ${rowNum}: Irregular harus angka`);
-        if(isNaN(Number(row[14]))) errors.push(`Baris ${rowNum}: Potongan harus angka`);
-        if(isNaN(Number(row[15]))) errors.push(`Baris ${rowNum}: Realisasi harus angka`);
-
         const calc = gaji + tunjangan + irregular - potongan;
-        if(calc !== realisasi){
+
+        if(Math.abs(calc - realisasi) > 1){
             errors.push(`Baris ${rowNum}: Realisasi salah, harus ${calc}`);
         }
     });
@@ -85,24 +93,26 @@ function validatePayrollData(){
 }
 
 async function savePayrollUpload(){
-    document.getElementById("errorBox").innerHTML = "";
+    clearError();
 
     if(payrollData.length <= 1){
-        document.getElementById("errorBox").innerHTML = "Pilih file Excel terlebih dahulu";
+        showError("Pilih file Excel terlebih dahulu");
         return;
     }
 
     const errors = validatePayrollData();
 
     if(errors.length > 0){
-        document.getElementById("errorBox").innerHTML =
-            "<b>Validasi gagal:</b><br>" + errors.join("<br>");
+        showError("<b>Validasi gagal:</b><br>" + errors.join("<br>"));
         return;
     }
 
     try{
         const res = await fetch(API_URL,{
             method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
             body: JSON.stringify({
                 action:"savePayrollUpload",
                 data: payrollData.slice(1)
@@ -114,44 +124,57 @@ async function savePayrollUpload(){
         if(result.success){
             alert("Upload payroll berhasil disimpan");
             payrollData = [];
+
             document.getElementById("previewTable").innerHTML = "";
             document.getElementById("excelFile").value = "";
         }else{
-            document.getElementById("errorBox").innerHTML = result.message;
+            showError(result.message || "Gagal menyimpan data");
         }
 
     }catch(err){
-        document.getElementById("errorBox").innerHTML = "Gagal upload payroll";
+        showError("Gagal upload payroll");
         console.error(err);
     }
 }
 
 function downloadTemplate(){
-    const templateData = [
-        [
-            "Periode",
-            "Nopeg",
-            "NIK",
-            "Gaji Pokok",
-            "Tunjangan",
-            "Irregular",
-            "BPJS4",
-            "BPJS1",
-            "JKK",
-            "JKM",
-            "JHT37",
-            "JHT2",
-            "JP2",
-            "JP1",
-            "Potongan",
-            "Realisasi"
-        ]
-    ];
+    const templateData = [[
+        "Periode",
+        "Nopeg",
+        "NIK",
+        "Gaji Pokok",
+        "Tunjangan",
+        "Irregular",
+        "BPJS4",
+        "BPJS1",
+        "JKK",
+        "JKM",
+        "JHT37",
+        "JHT2",
+        "JP2",
+        "JP1",
+        "Potongan",
+        "Realisasi"
+    ]];
 
     const ws = XLSX.utils.aoa_to_sheet(templateData);
     const wb = XLSX.utils.book_new();
 
     XLSX.utils.book_append_sheet(wb, ws, "Payroll Template");
     XLSX.writeFile(wb, "Template_Payroll_Input.xlsx");
+}
+
+function showError(msg){
+    const errorBox = document.getElementById("errorBox");
+    if(errorBox){
+        errorBox.innerHTML = msg;
+    }
+}
+
+function clearError(){
+    const errorBox = document.getElementById("errorBox");
+    if(errorBox){
+        errorBox.innerHTML = "";
+    }
 }
 </script>
