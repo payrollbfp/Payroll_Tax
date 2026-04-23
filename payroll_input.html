@@ -214,15 +214,18 @@ async function savePayroll(){
 
     try{
         const res = await fetch(API_URL,{
-            method:"POST",
-            headers:{
-                "Content-Type":"application/json"
-            },
-            body: JSON.stringify({
-                action:"savePayrollUpload",
-                data: payrollData.slice(1)
-            })
-        });
+    method:"POST",
+    headers:{
+        "Content-Type":"application/json"
+    },
+    body: JSON.stringify({
+        action:"savePayrollUpload",
+        data: payrollData.slice(1)
+    })
+});
+
+const text = await res.text();
+console.log("RESPONSE:", text);
 
         const result = await res.json();
 
