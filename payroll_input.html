@@ -8,21 +8,76 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:"California FB", serif;}
-body{min-height:100vh;background:linear-gradient(135deg,#d9918f,#6a85c9);padding:30px;color:white;}
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:25px;padding:20px 30px;background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);border-radius:20px;}
-.container{background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);border-radius:20px;padding:25px;}
-input[type=file]{padding:10px;background:white;color:#123;border-radius:8px;}
-button{padding:10px 18px;border:none;border-radius:8px;background:white;color:#123;font-weight:bold;cursor:pointer;margin-top:15px;margin-right:10px;}
-table{width:100%;margin-top:20px;border-collapse:collapse;background:rgba(255,255,255,0.1);}
-th,td{padding:10px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.2);}
-th{background:rgba(255,255,255,0.2);}
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:"California FB", serif;
+}
+body{
+    min-height:100vh;
+    background:linear-gradient(135deg,#d9918f,#6a85c9);
+    padding:30px;
+    color:white;
+}
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:25px;
+    padding:20px 30px;
+    background:rgba(255,255,255,0.15);
+    backdrop-filter:blur(10px);
+    border-radius:20px;
+}
+.container{
+    background:rgba(255,255,255,0.15);
+    backdrop-filter:blur(10px);
+    border-radius:20px;
+    padding:25px;
+}
+input[type=file]{
+    padding:10px;
+    background:white;
+    color:#123;
+    border-radius:8px;
+}
+button{
+    padding:10px 18px;
+    border:none;
+    border-radius:8px;
+    background:white;
+    color:#123;
+    font-weight:bold;
+    cursor:pointer;
+    margin-top:15px;
+    margin-right:10px;
+}
+table{
+    width:100%;
+    margin-top:20px;
+    border-collapse:collapse;
+    background:rgba(255,255,255,0.1);
+}
+th,td{
+    padding:10px;
+    border-bottom:1px solid rgba(255,255,255,0.2);
+}
+th{
+    background:rgba(255,255,255,0.2);
+}
 </style>
 </head>
 
 <body>
 
-<div id="topRealisasi" style="margin-bottom:15px;padding:15px 20px;background:rgba(255,255,255,0.15);border-radius:15px;font-weight:bold;">
+<!-- TOTAL REALISASI -->
+<div id="topRealisasi" style="
+    margin-bottom:15px;
+    padding:15px;
+    background:rgba(255,255,255,0.15);
+    border-radius:15px;
+    font-weight:bold;">
     Total Realisasi: Rp 0
 </div>
 
@@ -32,85 +87,126 @@ th{background:rgba(255,255,255,0.2);}
 </div>
 
 <div class="container">
+
     <input type="file" id="excelFile" accept=".xlsx,.xls">
     <button onclick="savePayroll()">Save Payroll</button>
 
     <table>
         <thead>
             <tr>
-                <th>Periode</th><th>Nopeg</th><th>NIK</th><th>Gaji Pokok</th>
-                <th>Tunjangan</th><th>Irregular Income</th>
-                <th>BPJS 4%</th><th>BPJS 1%</th><th>JKK</th><th>JKM</th>
-                <th>JHT 3.7%</th><th>JHT 2%</th><th>JP 2%</th><th>JP 1%</th>
-                <th>Potongan</th><th>Realisasi Gaji</th><th>Aksi</th>
+                <th>Periode</th>
+                <th>Nopeg</th>
+                <th>NIK</th>
+                <th>Gaji Pokok</th>
+                <th>Tunjangan</th>
+                <th>Irregular Income</th>
+                <th>BPJS 4%</th>
+                <th>BPJS 1%</th>
+                <th>JKK</th>
+                <th>JKM</th>
+                <th>JHT 3.7%</th>
+                <th>JHT 2%</th>
+                <th>JP 2%</th>
+                <th>JP 1%</th>
+                <th>Potongan</th>
+                <th>Realisasi Gaji</th>
+                <th>Aksi</th>
             </tr>
         </thead>
         <tbody id="previewTable"></tbody>
     </table>
+
 </div>
 
 <script>
+
 const API_URL = "https://script.google.com/macros/s/AKfycbzlxD3KY7Tl8HHl6Eo_C0Wt5EGDn_nvVC5IN35vjkkddD_uO7zJML8V1lz4Oo5nzGs/exec";
 
 let payrollData = [];
 
-document.getElementById("excelFile").addEventListener("change", handleFile);
+// UPLOAD FILE
+document.getElementById("excelFile").addEventListener("change", function(e){
 
-function handleFile(e){
     const file = e.target.files[0];
     if(!file) return;
 
     const reader = new FileReader();
 
-    reader.onload = function(event){
-        const data = new Uint8Array(event.target.result);
-        const workbook = XLSX.read(data, {type:'array'});
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    reader.onload = function(evt){
+        try{
+            const data = new Uint8Array(evt.target.result);
+            const workbook = XLSX.read(data, {type:'array'});
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
-        payrollData = XLSX.utils.sheet_to_json(sheet, {header:1});
+            payrollData = XLSX.utils.sheet_to_json(sheet, {
+                header:1,
+                defval:""
+            });
 
-        console.log("DATA:", payrollData);
+            console.log("DATA:", payrollData);
 
-        renderPreview();
-        hitungTotalAtas();
+            renderPreview();
+            hitungTotal();
+
+        }catch(err){
+            console.error(err);
+            alert("Gagal membaca file Excel");
+        }
     };
 
     reader.readAsArrayBuffer(file);
-}
+});
 
+// RENDER TABLE
 function renderPreview(){
-    let rows = "";
 
-    payrollData.slice(1).forEach((row, index) => {
-        rows += `
-        <tr>
-            ${row.map(col => `<td>${col || ""}</td>`).join("")}
-            <td><button onclick="deleteRow(${index})" style="background:#ff6b6b;color:white;">Hapus</button></td>
-        </tr>`;
-    });
+    let html = "";
 
-    document.getElementById("previewTable").innerHTML = rows;
+    for(let i = 1; i < payrollData.length; i++){
+        const row = payrollData[i];
+
+        html += "<tr>";
+
+        for(let j = 0; j <= 15; j++){
+            html += `<td>${row[j] || ""}</td>`;
+        }
+
+        html += `<td>
+            <button onclick="deleteRow(${i-1})" style="background:red;color:white;">
+                Hapus
+            </button>
+        </td>`;
+
+        html += "</tr>";
+    }
+
+    document.getElementById("previewTable").innerHTML = html;
 }
 
+// DELETE ROW
 function deleteRow(index){
     if(confirm("Hapus baris ini?")){
         payrollData.splice(index + 1, 1);
         renderPreview();
-        hitungTotalAtas();
+        hitungTotal();
     }
 }
 
-function hitungTotalAtas(){
+// HITUNG TOTAL REALISASI
+function hitungTotal(){
     let total = 0;
-    payrollData.slice(1).forEach(row => {
-        total += Number(row[15]) || 0;
-    });
+
+    for(let i = 1; i < payrollData.length; i++){
+        total += Number(payrollData[i][15]) || 0;
+    }
 
     document.getElementById("topRealisasi").innerHTML =
         "Total Realisasi: Rp " + total.toLocaleString("id-ID");
 }
 
+// SAVE KE GOOGLE SHEET
 async function savePayroll(){
+
     if(payrollData.length <= 1){
         alert("Upload data dulu");
         return;
@@ -119,7 +215,9 @@ async function savePayroll(){
     try{
         const res = await fetch(API_URL,{
             method:"POST",
-            headers:{ "Content-Type":"application/json" },
+            headers:{
+                "Content-Type":"application/json"
+            },
             body: JSON.stringify({
                 action:"savePayrollUpload",
                 data: payrollData.slice(1)
@@ -127,12 +225,11 @@ async function savePayroll(){
         });
 
         const result = await res.json();
-        console.log(result);
 
         if(result.success){
             alert("Data berhasil disimpan");
         }else{
-            alert(result.message);
+            alert("Error: " + result.message);
         }
 
     }catch(err){
@@ -140,6 +237,7 @@ async function savePayroll(){
         alert("Error koneksi ke server");
     }
 }
+
 </script>
 
 </body>
