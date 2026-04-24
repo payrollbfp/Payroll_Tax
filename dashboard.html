@@ -3,90 +3,100 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Payroll Tax Dashboard</title>
+<title>Payroll System Dashboard</title>
+
 <style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: Arial, sans-serif;
-    }
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
 
-    body {
-        min-height: 100vh;
-        background: linear-gradient(135deg, #d9918f, #6a85c9);
-        padding: 30px;
-        color: white;
-    }
+body{
+    min-height:100vh;
+    background: linear-gradient(135deg,#d9918f,#6a85c9);
+    padding:30px;
+    color:white;
+}
 
-    .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30px;
-        padding: 20px 30px;
-        background: rgba(255,255,255,0.15);
-        backdrop-filter: blur(10px);
-        border-radius: 20px;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-    }
+/* HEADER */
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:30px;
+    padding:20px 30px;
+    background:rgba(255,255,255,0.15);
+    backdrop-filter:blur(10px);
+    border-radius:20px;
+    box-shadow:0 8px 25px rgba(0,0,0,0.2);
+}
 
-    .header h1 {
-        font-size: 28px;
-    }
+.header h1{
+    font-size:28px;
+}
 
-    .logout-btn {
-        padding: 10px 18px;
-        border: none;
-        border-radius: 8px;
-        background: rgba(255,255,255,0.8);
-        color: #123;
-        font-weight: bold;
-        cursor: pointer;
-    }
+.logout-btn{
+    padding:10px 18px;
+    border:none;
+    border-radius:10px;
+    background:rgba(255,255,255,0.85);
+    color:#123;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.3s;
+}
 
-    .dashboard-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 25px;
-    }
+.logout-btn:hover{
+    background:white;
+    transform:scale(1.05);
+}
 
-    .card {
-        background: rgba(255,255,255,0.18);
-        backdrop-filter: blur(10px);
-        border-radius: 20px;
-        padding: 30px;
-        text-align: center;
-        cursor: pointer;
-        transition: 0.3s;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-    }
+/* GRID MENU */
+.dashboard-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:25px;
+}
 
-    .card:hover {
-        transform: translateY(-5px);
-        background: rgba(255,255,255,0.28);
-    }
+/* CARD */
+.card{
+    background:rgba(255,255,255,0.18);
+    backdrop-filter:blur(10px);
+    border-radius:20px;
+    padding:30px;
+    text-align:center;
+    cursor:pointer;
+    transition:0.3s;
+    box-shadow:0 8px 20px rgba(0,0,0,0.15);
+}
 
-    .icon {
-        font-size: 40px;
-        margin-bottom: 15px;
-    }
+.card:hover{
+    transform:translateY(-5px);
+    background:rgba(255,255,255,0.28);
+}
 
-    .card h2 {
-        font-size: 20px;
-        margin-bottom: 10px;
-    }
+.icon{
+    font-size:40px;
+    margin-bottom:15px;
+}
 
-    .card p {
-        font-size: 14px;
-        opacity: 0.9;
-    }
+.card h2{
+    font-size:20px;
+    margin-bottom:10px;
+}
+
+.card p{
+    font-size:14px;
+    opacity:0.9;
+}
 </style>
 </head>
 <body>
 
 <div class="header">
-    <h1>Payroll Tax Dashboard</h1>
+    <h1>Payroll System Dashboard</h1>
     <button class="logout-btn" onclick="logout()">Logout</button>
 </div>
 
@@ -95,31 +105,31 @@
     <div class="card" onclick="openMenu('master')">
         <div class="icon">👥</div>
         <h2>Master Karyawan</h2>
-        <p>Kelola data karyawan dan komponen payroll</p>
+        <p>Kelola data master karyawan dan komponen payroll</p>
     </div>
 
     <div class="card" onclick="openMenu('payroll')">
         <div class="icon">💰</div>
         <h2>Payroll Input</h2>
-        <p>Input payroll bulanan dan tunjangan</p>
+        <p>Input gaji, tunjangan, dan komponen payroll bulanan</p>
     </div>
 
     <div class="card" onclick="openMenu('tax')">
         <div class="icon">🧾</div>
         <h2>Tax Engine</h2>
-        <p>Hitung PPh21 Tahunan dan TER</p>
+        <p>Perhitungan otomatis PPh21 bulanan dan tahunan</p>
     </div>
 
     <div class="card" onclick="openMenu('report')">
         <div class="icon">📊</div>
         <h2>Report</h2>
-        <p>Laporan payroll dan pajak karyawan</p>
+        <p>Laporan payroll, pajak, dan rekap data karyawan</p>
     </div>
 
 </div>
 
 <script>
-function logout() {
+function logout(){
     window.location.href = "index.html";
 }
 
@@ -142,5 +152,6 @@ function openMenu(menu){
     }
 }
 </script>
+
 </body>
 </html>
