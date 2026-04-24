@@ -330,7 +330,21 @@ function renderPagination(){
 
     document.getElementById("pagination").innerHTML = html;
 }
+function formatTanggal(value){
+    if(!value) return '';
 
+    // Jika angka excel
+    if(typeof value === 'number'){
+        const excelDate = new Date((value - 25569) * 86400 * 1000);
+        return excelDate.toLocaleDateString('id-ID');
+    }
+
+    // Jika string tanggal biasa
+    const date = new Date(value);
+    if(isNaN(date)) return value;
+
+    return date.toLocaleDateString('id-ID');
+}
 /* CHANGE PAGE */
 function changePage(page){
     const totalPages = Math.ceil(filteredData.length / rowsPerPage);
