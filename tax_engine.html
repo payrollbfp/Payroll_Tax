@@ -76,7 +76,6 @@ const PTKP = {
 "K/0":58500000,"K/1":63000000,"K/2":67500000,"K/3":72000000
 };
 
-// LOAD PERIODE
 async function loadPeriode(){
     const { data } = await supabaseClient.from("payroll").select("periode");
     const unique = [...new Set(data.map(d=>d.periode))].sort();
@@ -87,14 +86,12 @@ async function loadPeriode(){
     });
 }
 
-// KATEGORI
 function getKategoriPTKP(status){
 if(["TK/0","TK/1","K/0","K/1"].includes(status)) return "A";
 if(["TK/2","TK/3","K/2"].includes(status)) return "B";
 return "C";
 }
 
-// TER RANGE
 function getTarifTER(bruto, status){
 const k = getKategoriPTKP(status);
 
@@ -125,18 +122,15 @@ C: [
 };
 
 const table = TER[k];
-
 for(let i=0;i<table.length;i++){
 let [min,max,rate] = table[i];
 if(bruto >= min && bruto <= max){
 return rate;
 }
 }
-
 return table[table.length-1][2];
 }
 
-// PROGRESIF
 function tarifProgresif(pkp){
 let pajak=0;
 if(pkp>500000000){pajak+=(pkp-500000000)*0.30; pkp=500000000;}
@@ -146,10 +140,9 @@ if(pkp>0){pajak+=pkp*0.05;}
 return pajak;
 }
 
-// MAIN
 async function loadTax(){
 
-const selected = document.getElementById("periodeSelect").value;
+const selected = String(document.getElementById("periodeSelect").value).trim();
 
 const { data: payroll } = await supabaseClient
 .from("payroll")
@@ -184,11 +177,12 @@ const project = m.project || "-";
 const status = (m.status_pajak || "TK/0").trim();
 
 let totalBruto=0,totalIuran=0,totalTER=0;
-let terCurrent = 0;
+let terCurrent = null;
 
 let last = rows[rows.length-1];
 
 rows.forEach(r=>{
+
 let gapok = +r.gaji_pokok||0;
 let tunj = +r.tunjangan||0;
 let premi = (+r.jkk||0)+(+r.jkm||0)+(+r.bpjs4||0);
@@ -197,17 +191,18 @@ let iuran = (+r.jht2||0)+(+r.jp1||0);
 
 let bruto = gapok+tunj+premi+irregular;
 
-let tarif = getTarifTER(bruto,status);
-let pph = bruto * tarif;
+let tarif = bruto > 0 ? getTarifTER(bruto,status) : 0;
+let pph = (bruto > 0 && tarif > 0) ? bruto * tarif : 0;
 
 totalBruto += bruto;
 totalIuran += iuran;
 totalTER += pph;
 
-// hanya periode dipilih
-if(r.periode === selected){
+// 👉 hanya ambil periode aktif DAN harus kena tarif
+if(String(r.periode).trim() === selected && bruto > 0 && tarif > 0){
     terCurrent = pph;
 }
+
 });
 
 let biayaJabatan = 500000 * rows.length;
@@ -233,7 +228,7 @@ html += `<tr>
 <td>${neto.toFixed(0)}</td>
 <td>${ptkp.toFixed(0)}</td>
 <td>${pkp.toFixed(0)}</td>
-<td>${terCurrent > 0 ? terCurrent.toFixed(0) : ""}</td>
+<td>${terCurrent ? terCurrent.toFixed(0) : ""}</td>
 <td>${pphFinal.toFixed(0)}</td>
 <td>${selisih.toFixed(0)}</td>
 <td>${ket}</td>
@@ -243,12 +238,10 @@ html += `<tr>
 document.getElementById("tbody").innerHTML = html;
 }
 
-// SAVE
-async function saveTax(){
+function saveTax(){
 alert("Data siap disimpan (opsional)");
 }
 
-// BACK
 function goBack(){
 window.location.href="dashboard.html";
 }
