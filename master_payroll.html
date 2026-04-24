@@ -1,136 +1,104 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Master Payroll Karyawan</title>
+<title>Upload Master Payroll</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <style>
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:"California FB", serif;
-}
 body{
-    min-height:100vh;
-    background:linear-gradient(135deg,#d9918f,#6a85c9);
-    padding:30px;
-    color:white;
+    font-family:Segoe UI,sans-serif;
+    background:#eef2f7;
+    margin:0;
 }
 .header{
+    background:#1e293b;
+    color:white;
+    padding:15px 20px;
     display:flex;
     justify-content:space-between;
     align-items:center;
-    margin-bottom:25px;
-    padding:20px 30px;
-    background:rgba(255,255,255,0.15);
-    backdrop-filter:blur(10px);
-    border-radius:20px;
-}
-.back-btn{
-    padding:10px 18px;
-    border:none;
-    border-radius:8px;
-    background:white;
-    color:#123;
-    cursor:pointer;
-    font-weight:bold;
 }
 .container{
-    background:rgba(255,255,255,0.18);
-    backdrop-filter:blur(10px);
-    border-radius:20px;
-    padding:25px;
+    padding:20px;
 }
-.search-box{
-    display:flex;
-    gap:10px;
-    margin-bottom:20px;
-}
-.search-box input{
-    padding:10px;
-    border:none;
-    border-radius:8px;
-    width:250px;
-}
-.search-box button{
-    padding:10px 18px;
-    border:none;
-    border-radius:8px;
+.card{
     background:white;
-    color:#123;
-    cursor:pointer;
-    font-weight:bold;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 6px 15px rgba(0,0,0,0.1);
 }
+button{
+    border:none;
+    padding:8px 12px;
+    margin:4px;
+    border-radius:6px;
+    cursor:pointer;
+}
+.btn1{background:#3b82f6;color:white;}
+.btn2{background:#10b981;color:white;}
+.btn3{background:#f59e0b;color:white;}
+.btnBack{background:#64748b;color:white;}
+
 table{
     width:100%;
     border-collapse:collapse;
-    background:rgba(255,255,255,0.12);
+    margin-top:20px;
 }
 th,td{
-    padding:10px;
-    text-align:left;
+    padding:8px;
+    border:1px solid #ddd;
+    font-size:12px;
 }
 th{
-    background:rgba(255,255,255,0.2);
-}
-.pagination{
-    margin-top:20px;
-    display:flex;
-    justify-content:center;
-    gap:8px;
-    flex-wrap:wrap;
-}
-.pagination button{
-    padding:8px 12px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-    font-weight:bold;
-}
-.active-page{
-    background:#123;
+    background:#334155;
     color:white;
+}
+.loading{
+    display:none;
+    color:#3b82f6;
+    margin-top:10px;
 }
 </style>
 </head>
-
 <body>
 
 <div class="header">
-    <h1>Master Payroll Karyawan</h1>
-    <button class="back-btn" onclick="window.location.href='dashboard.html'">Back</button>
+    <h2>Upload Master Payroll</h2>
+    <button class="btnBack" onclick="window.location.href='dashboard.html'">Back</button>
 </div>
 
 <div class="container">
+<div class="card">
 
-    <div class="search-box">
-        <input type="text" id="searchNama" placeholder="Search by Nama">
-        <button onclick="searchPayroll()">Search</button>
-    </div>
+<input type="file" id="fileInput">
+<button class="btn1" onclick="previewFile()">Preview</button>
+<button class="btn2" onclick="saveData()">Save</button>
+<button class="btn3" onclick="replaceData()">Replace All</button>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Nopeg</th>
-                <th>NIK</th>
-                <th>NPWP</th>
-                <th>Nama</th>
-                <th>Jenis Kelamin</th>
-                <th>Alamat</th>
-                <th>Status Pajak</th>
-                <th>TMT</th>
-                <th>Project</th>
-            </tr>
-        </thead>
-        <tbody id="payrollTable"></tbody>
-    </table>
+<p id="loading" class="loading">⏳ Processing...</p>
 
-    <div class="pagination" id="pagination"></div>
+<table>
+<thead>
+<tr>
+    <th>Nopeg</th>
+    <th>NIK</th>
+    <th>NPWP</th>
+    <th>Nama</th>
+    <th>Jenis Kelamin</th>
+    <th>Alamat</th>
+    <th>Status Pajak</th>
+    <th>TMT</th>
+    <th>Project</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
 
+</div>
 </div>
 
 <script>
@@ -138,98 +106,119 @@ const SUPABASE_URL = "https://nwrbjbwjmkahjuuyizfq.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmJqYndqbWthaGp1dXlpemZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MjM4OTIsImV4cCI6MjA5MjQ5OTg5Mn0.n67pONlkoMqZguyoTwQQFJ0VBRfPaIVuVlPGxsajaGA";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let payrollData = [];
-let filteredData = [];
-let currentPage = 1;
-const rowsPerPage = 20;
+let masterData = [];
 
-/* LOAD DATA */
-async function loadPayroll(){
-    const { data, error } = await supabaseClient
-        .from("master_payroll")
-        .select("*")
-        .order("nama", { ascending: true });
+/* PREVIEW FILE */
+function previewFile(){
+    const file = document.getElementById("fileInput").files[0];
+    if(!file) return alert("Pilih file Excel");
 
-    if(error){
-        console.error(error);
-        alert("Gagal load data master payroll");
-        return;
-    }
+    loading(true);
 
-    payrollData = data;
-    filteredData = data;
-    currentPage = 1;
+    const reader = new FileReader();
+    reader.onload = function(e){
+        const workbook = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        masterData = XLSX.utils.sheet_to_json(sheet);
 
-    renderTable();
-    renderPagination();
+        renderTable();
+        loading(false);
+    };
+    reader.readAsArrayBuffer(file);
 }
 
 /* RENDER TABLE */
 function renderTable(){
-    const start = (currentPage - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    const pageData = filteredData.slice(start, end);
+    const tbody = document.getElementById("tbody");
+    tbody.innerHTML = "";
 
-    let rows = "";
-
-    pageData.forEach(item=>{
-        rows += `
+    masterData.forEach(row=>{
+        tbody.innerHTML += `
         <tr>
-            <td>${item.nopeg || ""}</td>
-            <td>${item.nik || ""}</td>
-            <td>${item.npwp || ""}</td>
-            <td>${item.nama || ""}</td>
-            <td>${item.jenis_kelamin || ""}</td>
-            <td>${item.alamat || ""}</td>
-            <td>${item.status_pajak || ""}</td>
-            <td>${item.tmt || ""}</td>
-            <td>${item.project || ""}</td>
+            <td>${row.nopeg || ''}</td>
+            <td>${row.nik || ''}</td>
+            <td>${row.npwp || ''}</td>
+            <td>${row.nama || ''}</td>
+            <td>${row.jenis_kelamin || ''}</td>
+            <td>${row.alamat || ''}</td>
+            <td>${row.status_pajak || ''}</td>
+            <td>${row.tmt || ''}</td>
+            <td>${row.project || ''}</td>
         </tr>`;
     });
-
-    document.getElementById("payrollTable").innerHTML = rows;
 }
 
-/* SEARCH */
-function searchPayroll(){
-    const keyword = document.getElementById("searchNama").value.toLowerCase();
-
-    filteredData = payrollData.filter(item =>
-        (item.nama || "").toLowerCase().includes(keyword)
-    );
-
-    currentPage = 1;
-    renderTable();
-    renderPagination();
+/* FORMAT DATA */
+function formatData(){
+    return masterData.map(r => ({
+        nopeg: r.nopeg || '',
+        nik: r.nik || '',
+        npwp: r.npwp || '',
+        nama: r.nama || '',
+        jenis_kelamin: r.jenis_kelamin || '',
+        alamat: r.alamat || '',
+        status_pajak: r.status_pajak || '',
+        tmt: r.tmt || '',
+        project: r.project || ''
+    }));
 }
 
-/* PAGINATION */
-function renderPagination(){
-    const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-    let html = "";
+/* SAVE */
+async function saveData(){
+    if(masterData.length===0) return alert("Tidak ada data");
 
-    html += `<button onclick="changePage(${currentPage-1})" ${currentPage===1?'disabled':''}>Previous</button>`;
+    loading(true);
 
-    for(let i=1; i<=totalPages; i++){
-        html += `<button class="${i===currentPage?'active-page':''}" onclick="changePage(${i})">${i}</button>`;
+    const { error } = await supabaseClient
+        .from("master_payroll")
+        .insert(formatData());
+
+    loading(false);
+
+    if(error){
+        console.error(error);
+        alert("❌ Gagal simpan data");
+    }else{
+        alert("✅ Data berhasil disimpan");
+    }
+}
+
+/* REPLACE */
+async function replaceData(){
+    if(masterData.length===0) return alert("Tidak ada data");
+    if(!confirm("Hapus semua data lama dan replace?")) return;
+
+    loading(true);
+
+    const { error: deleteError } = await supabaseClient
+        .from("master_payroll")
+        .delete()
+        .neq("id",0);
+
+    if(deleteError){
+        loading(false);
+        console.error(deleteError);
+        return alert("❌ Gagal hapus data lama");
     }
 
-    html += `<button onclick="changePage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>Next</button>`;
+    const { error: insertError } = await supabaseClient
+        .from("master_payroll")
+        .insert(formatData());
 
-    document.getElementById("pagination").innerHTML = html;
+    loading(false);
+
+    if(insertError){
+        console.error(insertError);
+        alert("❌ Gagal replace data");
+    }else{
+        alert("✅ Replace berhasil");
+    }
 }
 
-/* CHANGE PAGE */
-function changePage(page){
-    const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-    if(page < 1 || page > totalPages) return;
-
-    currentPage = page;
-    renderTable();
-    renderPagination();
+/* LOADING */
+function loading(show){
+    document.getElementById("loading").style.display = show ? "block" : "none";
 }
-
-window.onload = loadPayroll;
 </script>
 
 </body>
