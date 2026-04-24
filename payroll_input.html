@@ -2,34 +2,41 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Payroll Final</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <style>
-body { font-family:Segoe UI; background:#eef2f7; margin:0; }
-.header {
-  background:#1e293b;
-  color:white;
-  padding:15px 20px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+body{
+    font-family:Segoe UI,sans-serif;
+    background:#eef2f7;
+    margin:0;
 }
-.container { padding:20px; }
-.card {
-  background:white;
-  padding:20px;
-  border-radius:12px;
-  box-shadow:0 6px 15px rgba(0,0,0,0.1);
+.header{
+    background:#1e293b;
+    color:white;
+    padding:15px 20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
 }
-button {
-  border:none;
-  padding:8px 12px;
-  margin:4px;
-  border-radius:6px;
-  cursor:pointer;
+.container{
+    padding:20px;
+}
+.card{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 6px 15px rgba(0,0,0,0.1);
+}
+button{
+    border:none;
+    padding:8px 12px;
+    margin:4px;
+    border-radius:6px;
+    cursor:pointer;
 }
 .btn1{background:#3b82f6;color:white;}
 .btn2{background:#10b981;color:white;}
@@ -37,49 +44,62 @@ button {
 .btn4{background:#ef4444;color:white;}
 .btnBack{background:#64748b;color:white;}
 
-table { width:100%; border-collapse:collapse; margin-top:20px; }
-th,td { padding:8px; border:1px solid #ddd; font-size:12px; }
-th { background:#334155; color:white; }
-
-.detail-box {
-  background:#f1f5f9;
-  padding:10px;
-  border-radius:8px;
-  line-height:1.6;
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
 }
-.loading { display:none; color:#3b82f6; }
+th,td{
+    padding:8px;
+    border:1px solid #ddd;
+    font-size:12px;
+}
+th{
+    background:#334155;
+    color:white;
+}
+.detail-box{
+    background:#f1f5f9;
+    padding:10px;
+    border-radius:8px;
+    line-height:1.6;
+}
+.loading{
+    display:none;
+    color:#3b82f6;
+    margin-top:10px;
+}
 </style>
 </head>
-
 <body>
 
 <div class="header">
-  <h2>Payroll System</h2>
-  <button class="btnBack" onclick="goDashboard()">Back</button>
+    <h2>Payroll System</h2>
+    <button class="btnBack" onclick="goDashboard()">Back</button>
 </div>
 
 <div class="container">
 <div class="card">
 
 <input type="file" id="fileInput">
-<button class="btn1" onclick="preview()">Preview</button>
-<button class="btn2" onclick="save()">Save</button>
-<button class="btn3" onclick="replaceData()">Replace</button>
+<button class="btn1" onclick="previewFile()">Preview</button>
+<button class="btn2" onclick="saveData()">Save</button>
+<button class="btn3" onclick="replaceByPeriod()">Replace Periode</button>
 
 <p id="loading" class="loading">⏳ Processing...</p>
 
 <table>
 <thead>
 <tr>
-<th>Periode</th>
-<th>Nopeg</th>
-<th>NIK</th>
-<th>Gaji</th>
-<th>Tunjangan</th>
-<th>Realisasi</th>
-<th>Masa Terakhir</th>
-<th>Detail</th>
-<th>Aksi</th>
+    <th>Periode</th>
+    <th>Nopeg</th>
+    <th>NIK</th>
+    <th>Gaji</th>
+    <th>Tunjangan</th>
+    <th>Realisasi</th>
+    <th>Masa Terakhir</th>
+    <th>Detail</th>
+    <th>Aksi</th>
 </tr>
 </thead>
 <tbody id="tbody"></tbody>
@@ -93,171 +113,182 @@ const SUPABASE_URL = "https://YOUR_PROJECT.supabase.co";
 const SUPABASE_KEY = "YOUR_ANON_KEY";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let dataGlobal = [];
+let payrollData = [];
 
 /* ================= BACK ================= */
 function goDashboard(){
-  window.location.href = "dashboard.html";
+    window.location.href = "dashboard.html";
 }
 
-/* ================= PREVIEW ================= */
-function preview() {
-  const file = document.getElementById("fileInput").files[0];
-  if (!file) return alert("Pilih file");
+/* ================= PREVIEW FILE ================= */
+function previewFile(){
+    const file = document.getElementById("fileInput").files[0];
+    if(!file) return alert("Pilih file Excel");
 
-  loading(true);
+    loading(true);
 
-  const reader = new FileReader();
-  reader.onload = e => {
-    const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
-    const sheet = wb.Sheets[wb.SheetNames[0]];
-    dataGlobal = XLSX.utils.sheet_to_json(sheet);
+    const reader = new FileReader();
+    reader.onload = function(e){
+        const workbook = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        payrollData = XLSX.utils.sheet_to_json(sheet);
 
-    render();
-    loading(false);
-  };
-  reader.readAsArrayBuffer(file);
+        if(payrollData.length === 0){
+            loading(false);
+            return alert("File kosong");
+        }
+
+        const periodeAwal = payrollData[0].Periode;
+        const bedaPeriode = payrollData.some(r => r.Periode !== periodeAwal);
+
+        if(bedaPeriode){
+            loading(false);
+            return alert("Semua data dalam file harus periode yang sama");
+        }
+
+        renderTable();
+        loading(false);
+    };
+    reader.readAsArrayBuffer(file);
 }
 
-/* ================= RENDER ================= */
-function render() {
-  const tbody = document.getElementById("tbody");
-  tbody.innerHTML = "";
+/* ================= RENDER TABLE ================= */
+function renderTable(){
+    const tbody = document.getElementById("tbody");
+    tbody.innerHTML = "";
 
-  dataGlobal.forEach((row, i) => {
+    payrollData.forEach((row, index) => {
+        const tr = document.createElement("tr");
 
-    const main = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${row.Periode || ''}</td>
+            <td>${row.Nopeg || ''}</td>
+            <td>${row.NIK || ''}</td>
+            <td>${row["Gaji Pokok"] || 0}</td>
+            <td>${row.Tunjangan || 0}</td>
+            <td>${row["Realisasi Gaji"] || 0}</td>
+            <td>${row["Masa Terakhir"] || row.Periode || ''}</td>
+            <td><button onclick="toggleDetail(${index})">Detail</button></td>
+            <td><button class="btn4" onclick="deleteRow(${index})">Delete</button></td>
+        `;
 
-    main.innerHTML = `
-      <td>${row.Periode || ''}</td>
-      <td>${row.Nopeg || ''}</td>
-      <td>${row.NIK || ''}</td>
-      <td>${row["Gaji Pokok"] || 0}</td>
-      <td>${row.Tunjangan || 0}</td>
-      <td>${row["Realisasi Gaji"] || 0}</td>
-      <td>${row["Masa Terakhir"] || row.Periode || ''}</td>
-      <td><button onclick="toggle(${i})">Detail</button></td>
-      <td><button class="btn4" onclick="del(${i})">Delete</button></td>
-    `;
+        const detailRow = document.createElement("tr");
+        detailRow.id = "detail-"+index;
+        detailRow.style.display = "none";
 
-    const detail = document.createElement("tr");
-    detail.style.display = "none";
-    detail.id = "d"+i;
+        detailRow.innerHTML = `
+            <td colspan="9">
+                <div class="detail-box">
+                    BPJS 4%: ${row["BPJS 4%"] || 0} |
+                    BPJS 1%: ${row["BPJS 1%"] || 0}<br>
+                    JKK: ${row.JKK || 0} |
+                    JKM: ${row.JKM || 0}<br>
+                    JHT 3.7%: ${row["JHT 3.7%"] || 0} |
+                    JHT 2%: ${row["JHT 2%"] || 0}<br>
+                    JP 2%: ${row["JP 2%"] || 0} |
+                    JP 1%: ${row["JP 1%"] || 0}<br>
+                    Potongan: ${row.Potongan || 0}
+                </div>
+            </td>
+        `;
 
-    detail.innerHTML = `
-      <td colspan="9">
-        <div class="detail-box">
-          <b>BPJS & Komponen:</b><br><br>
-
-          BPJS 4%: ${row["BPJS 4%"] || 0} |
-          BPJS 1%: ${row["BPJS 1%"] || 0}<br>
-
-          JKK: ${row.JKK || 0} |
-          JKM: ${row.JKM || 0}<br>
-
-          JHT 3.7%: ${row["JHT 3.7%"] || 0} |
-          JHT 2%: ${row["JHT 2%"] || 0}<br>
-
-          JP 2%: ${row["JP 2%"] || 0} |
-          JP 1%: ${row["JP 1%"] || 0}<br>
-
-          Potongan: ${row.Potongan || 0}
-        </div>
-      </td>
-    `;
-
-    tbody.appendChild(main);
-    tbody.appendChild(detail);
-  });
+        tbody.appendChild(tr);
+        tbody.appendChild(detailRow);
+    });
 }
 
-/* ================= TOGGLE ================= */
-function toggle(i){
-  const el = document.getElementById("d"+i);
-  el.style.display = el.style.display === "none" ? "table-row" : "none";
+/* ================= DETAIL ================= */
+function toggleDetail(index){
+    const row = document.getElementById("detail-"+index);
+    row.style.display = row.style.display === "none" ? "table-row" : "none";
 }
 
 /* ================= DELETE ================= */
-function del(i){
-  dataGlobal[i]["Masa Terakhir"] = dataGlobal[i]["Masa Terakhir"] || dataGlobal[i].Periode;
-  dataGlobal.splice(i,1);
-  render();
+function deleteRow(index){
+    payrollData.splice(index,1);
+    renderTable();
 }
 
-/* ================= FORMAT ================= */
+/* ================= FORMAT DATA ================= */
 function formatData(){
-  return dataGlobal.map(r => ({
-    periode: r.Periode || '',
-    nopeg: r.Nopeg || '',
-    nik: r.NIK || '',
-    gaji_pokok: Number(r["Gaji Pokok"]) || 0,
-    tunjangan: Number(r.Tunjangan) || 0,
-    irregular: Number(r["Irregular Income"]) || 0,
-    bpjs4: Number(r["BPJS 4%"]) || 0,
-    bpjs1: Number(r["BPJS 1%"]) || 0,
-    jkk: Number(r.JKK) || 0,
-    jkm: Number(r.JKM) || 0,
-    jht37: Number(r["JHT 3.7%"]) || 0,
-    jht2: Number(r["JHT 2%"]) || 0,
-    jp2: Number(r["JP 2%"]) || 0,
-    jp1: Number(r["JP 1%"]) || 0,
-    potongan: Number(r.Potongan) || 0,
-    realisasi: Number(r["Realisasi Gaji"]) || 0,
-    masa_terakhir: r["Masa Terakhir"] || r.Periode || ''
-  }));
+    return payrollData.map(r => ({
+        periode: r.Periode || '',
+        nopeg: r.Nopeg || '',
+        nik: r.NIK || '',
+        gaji_pokok: Number(r["Gaji Pokok"]) || 0,
+        tunjangan: Number(r.Tunjangan) || 0,
+        irregular: Number(r["Irregular Income"]) || 0,
+        bpjs4: Number(r["BPJS 4%"]) || 0,
+        bpjs1: Number(r["BPJS 1%"]) || 0,
+        jkk: Number(r.JKK) || 0,
+        jkm: Number(r.JKM) || 0,
+        jht37: Number(r["JHT 3.7%"]) || 0,
+        jht2: Number(r["JHT 2%"]) || 0,
+        jp2: Number(r["JP 2%"]) || 0,
+        jp1: Number(r["JP 1%"]) || 0,
+        potongan: Number(r.Potongan) || 0,
+        realisasi: Number(r["Realisasi Gaji"]) || 0,
+        masa_terakhir: r["Masa Terakhir"] || r.Periode || ''
+    }));
 }
 
 /* ================= SAVE ================= */
-async function save(){
-  loading(true);
+async function saveData(){
+    loading(true);
 
-  const { error } = await supabaseClient
-    .from("payroll")
-    .insert(formatData());
+    const { error } = await supabaseClient
+        .from("payroll")
+        .insert(formatData());
 
-  loading(false);
+    loading(false);
 
-  if(error){
-    console.error(error);
-    alert("❌ Gagal simpan data");
-  }else{
-    alert("✅ Data berhasil disimpan");
-  }
+    if(error){
+        console.error(error);
+        alert("❌ Gagal simpan data");
+    }else{
+        alert("✅ Data berhasil disimpan");
+    }
 }
 
-/* ================= REPLACE ================= */
-async function replaceData(){
-  if(!confirm("Hapus semua data lama dan replace?")) return;
+/* ================= REPLACE PERIODE ================= */
+async function replaceByPeriod(){
+    if(payrollData.length === 0){
+        return alert("Tidak ada data preview");
+    }
 
-  loading(true);
+    const periode = payrollData[0].Periode;
+    if(!confirm(`Replace data periode ${periode}?`)) return;
 
-  const { error: deleteError } = await supabaseClient
-    .from("payroll")
-    .delete()
-    .neq("id",0);
+    loading(true);
 
-  if(deleteError){
+    const { error: deleteError } = await supabaseClient
+        .from("payroll")
+        .delete()
+        .eq("periode", periode);
+
+    if(deleteError){
+        loading(false);
+        console.error(deleteError);
+        return alert("❌ Gagal hapus data periode lama");
+    }
+
+    const { error: insertError } = await supabaseClient
+        .from("payroll")
+        .insert(formatData());
+
     loading(false);
-    return alert("❌ Gagal hapus data lama");
-  }
 
-  const { error: insertError } = await supabaseClient
-    .from("payroll")
-    .insert(formatData());
-
-  loading(false);
-
-  if(insertError){
-    console.error(insertError);
-    alert("❌ Gagal replace data");
-  }else{
-    alert("✅ Replace data berhasil");
-  }
+    if(insertError){
+        console.error(insertError);
+        alert("❌ Gagal replace data");
+    }else{
+        alert(`✅ Data periode ${periode} berhasil di-replace`);
+    }
 }
 
 /* ================= LOADING ================= */
-function loading(x){
-  document.getElementById("loading").style.display = x ? "block" : "none";
+function loading(show){
+    document.getElementById("loading").style.display = show ? "block" : "none";
 }
 </script>
 
