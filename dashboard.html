@@ -14,23 +14,18 @@
 }
 
 body{
+    background:#f4f6f9;
     min-height:100vh;
-    background: linear-gradient(135deg,#d9918f,#6a85c9);
-    padding:30px;
-    color:white;
 }
 
 /* HEADER */
 .header{
+    background:#1f2d3d;
+    color:white;
+    padding:20px 30px;
     display:flex;
     justify-content:space-between;
     align-items:center;
-    margin-bottom:30px;
-    padding:20px 30px;
-    background:rgba(255,255,255,0.15);
-    backdrop-filter:blur(10px);
-    border-radius:20px;
-    box-shadow:0 8px 25px rgba(0,0,0,0.2);
 }
 
 .header h1{
@@ -38,94 +33,98 @@ body{
 }
 
 .logout-btn{
-    padding:10px 18px;
+    padding:10px 16px;
     border:none;
-    border-radius:10px;
-    background:rgba(255,255,255,0.85);
-    color:#123;
-    font-weight:bold;
+    border-radius:5px;
+    background:#e74c3c;
+    color:white;
     cursor:pointer;
-    transition:0.3s;
+    font-weight:bold;
 }
 
 .logout-btn:hover{
-    background:white;
-    transform:scale(1.05);
+    background:#c0392b;
 }
 
-/* GRID MENU */
+/* CONTENT */
+.container{
+    padding:30px;
+}
+
 .dashboard-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:25px;
+    gap:20px;
 }
 
 /* CARD */
 .card{
-    background:rgba(255,255,255,0.18);
-    backdrop-filter:blur(10px);
-    border-radius:20px;
-    padding:30px;
-    text-align:center;
+    background:white;
+    border-radius:8px;
+    padding:25px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
     cursor:pointer;
     transition:0.3s;
-    box-shadow:0 8px 20px rgba(0,0,0,0.15);
+    border-top:4px solid #2c3e50;
 }
 
 .card:hover{
-    transform:translateY(-5px);
-    background:rgba(255,255,255,0.28);
+    transform:translateY(-3px);
+    box-shadow:0 4px 12px rgba(0,0,0,0.12);
 }
 
 .icon{
-    font-size:40px;
-    margin-bottom:15px;
+    font-size:32px;
+    margin-bottom:10px;
 }
 
 .card h2{
-    font-size:20px;
-    margin-bottom:10px;
+    font-size:18px;
+    margin-bottom:8px;
+    color:#2c3e50;
 }
 
 .card p{
     font-size:14px;
-    opacity:0.9;
+    color:#666;
 }
 </style>
 </head>
 <body>
 
 <div class="header">
-    <h1>Payroll System Dashboard</h1>
+    <h1>Payroll System</h1>
     <button class="logout-btn" onclick="logout()">Logout</button>
 </div>
 
-<div class="dashboard-grid">
+<div class="container">
+    <div class="dashboard-grid">
 
-    <div class="card" onclick="openMenu('master')">
-        <div class="icon">👥</div>
-        <h2>Master Karyawan</h2>
-        <p>Kelola data master karyawan dan komponen payroll</p>
+        <div class="card" onclick="openMenu('master')">
+            <div class="icon">👥</div>
+            <h2>Master Karyawan</h2>
+            <p>Kelola data karyawan</p>
+        </div>
+
+        <div class="card" onclick="openMenu('payroll')">
+            <div class="icon">💰</div>
+            <h2>Payroll Input</h2>
+            <p>Input gaji dan tunjangan</p>
+        </div>
+
+        <div class="card" onclick="openMenu('tax')">
+            <div class="icon">🧾</div>
+            <h2>Tax Engine</h2>
+            <p>Hitung PPh21</p>
+        </div>
+
+        <div class="card" onclick="openMenu('report')">
+            <div class="icon">📊</div>
+            <h2>Report</h2>
+            <p>Laporan payroll</p>
+        </div>
+
     </div>
-
-    <div class="card" onclick="openMenu('payroll')">
-        <div class="icon">💰</div>
-        <h2>Payroll Input</h2>
-        <p>Input gaji, tunjangan, dan komponen payroll bulanan</p>
-    </div>
-
-    <div class="card" onclick="openMenu('tax')">
-        <div class="icon">🧾</div>
-        <h2>Tax Engine</h2>
-        <p>Perhitungan otomatis PPh21 bulanan dan tahunan</p>
-    </div>
-
-    <div class="card" onclick="openMenu('report')">
-        <div class="icon">📊</div>
-        <h2>Report</h2>
-        <p>Laporan payroll, pajak, dan rekap data karyawan</p>
-    </div>
-
 </div>
 
 <script>
