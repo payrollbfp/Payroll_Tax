@@ -184,22 +184,26 @@ function previewFile(){
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const raw = XLSX.utils.sheet_to_json(sheet);
 
+        if(raw.length===0){
+            alert("File kosong");
+            return;
+        }
+
         uploadData = raw.map(row => ({
-            nopeg: row.Nopeg || '',
+            nopeg: row.Nopeg || row.NOPEG || '',
             nik: row.NIK || '',
             npwp: row.NPWP || '',
-            nama: row.Nama || '',
-            jenis_kelamin: row["Jenis Kelamin"] || '',
-            alamat: row.Alamat || '',
-            status_pajak: row["Status Pajak"] || '',
+            nama: row.Nama || row.NAMA || '',
+            jenis_kelamin: row["Jenis Kelamin"] || row["JENIS KELAMIN"] || '',
+            alamat: row.Alamat || row.ALAMAT || '',
+            status_pajak: row["Status Pajak"] || row["STATUS PAJAK"] || '',
             tmt: row.TMT || '',
-            project: row.Project || ''
+            project: row.Project || row.PROJECT || ''
         }));
 
         payrollData = uploadData;
         filteredData = uploadData;
         currentPage = 1;
-
         renderTable();
         renderPagination();
     };
