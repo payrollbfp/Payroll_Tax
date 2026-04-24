@@ -13,7 +13,6 @@ body{font-family:Segoe UI;margin:0;background:#eef2f7;}
     padding:15px;
     display:flex;
     justify-content:space-between;
-    align-items:center;
 }
 .header-right{display:flex;gap:10px;}
 .container{padding:20px;}
@@ -49,16 +48,16 @@ th{background:#334155;color:white;}
 <th>Gapok</th>
 <th>Tunjangan</th>
 <th>Premi Asuransi</th>
-<th>THR</th>
-<th>Jumlah Penghasilan Bruto</th>
+<th>Irregular Income</th>
+<th>Jumlah Bruto</th>
 <th>Biaya Jabatan</th>
-<th>Iuran Pensiun/JHT</th>
-<th>Jumlah Neto</th>
+<th>Iuran</th>
+<th>Neto</th>
 <th>PTKP</th>
 <th>PKP</th>
-<th>PPH TER (Periode)</th>
+<th>PPH TER</th>
 <th>PPH 21 FINAL</th>
-<th>Selisih Pajak</th>
+<th>Selisih</th>
 <th>Keterangan</th>
 </tr>
 </thead>
@@ -79,20 +78,18 @@ const PTKP = {
 "K/0":58500000,"K/1":63000000,"K/2":67500000,"K/3":72000000
 };
 
-// ================= LOAD PERIODE =================
+// LOAD PERIODE
 async function loadPeriode(){
     const { data } = await supabaseClient.from("payroll").select("periode");
     const unique = [...new Set(data.map(d=>d.periode))].sort();
-
     const select = document.getElementById("periodeSelect");
     select.innerHTML = "";
-
     unique.forEach(p=>{
         select.innerHTML += `<option value="${p}">${p}</option>`;
     });
 }
 
-// ================= TER =================
+// TER
 function getKategoriPTKP(status){
 if(["TK/0","TK/1","K/0","K/1"].includes(status)) return "A";
 if(["TK/2","TK/3","K/2"].includes(status)) return "B";
@@ -138,7 +135,7 @@ if(bruto<=10950000)return 0.015;
 return 0.05;
 }
 
-// ================= PROGRESIF =================
+// PROGRESIF
 function tarifProgresif(pkp){
 let pajak=0;
 if(pkp>500000000){pajak+=(pkp-500000000)*0.30; pkp=500000000;}
@@ -148,23 +145,11 @@ if(pkp>0){pajak+=pkp*0.05;}
 return pajak;
 }
 
-// ================= MAIN =================
+// MAIN
 async function loadTax(){
 
 const selected = document.getElementById("periodeSelect").value;
 
-// cek existing
-const { data: existing } = await supabaseClient
-.from("tax_report")
-.select("*")
-.eq("periode", selected);
-
-if(existing && existing.length>0){
-    render(existing);
-    return;
-}
-
-// ambil YTD
 const { data: payroll } = await supabaseClient
 .from("payroll")
 .select("*")
@@ -198,29 +183,22 @@ const nama = m.nama || "-";
 const project = m.project || "-";
 const status = (m.status_pajak || "TK/0").trim();
 
-let totalBruto=0,totalIuran=0;
-let totalTER_YTD=0;
-let terCurrent=0;
+let totalBruto=0,totalIuran=0,totalTER=0;
+
+let last = rows[rows.length-1]; // ambil periode terakhir utk display
 
 rows.forEach(r=>{
 let gapok = +r.gaji_pokok||0;
 let tunj = +r.tunjangan||0;
 let premi = (+r.jkk||0)+(+r.jkm||0)+(+r.bpjs4||0);
-let thr = +r.irregular||0; // ✅ THR dari irregular
+let irregular = +r.irregular||0;
 let iuran = (+r.jht2||0)+(+r.jp1||0);
 
-let bruto = gapok+tunj+premi+thr;
+let bruto = gapok+tunj+premi+irregular;
 
 totalBruto += bruto;
 totalIuran += iuran;
-
-let pph = bruto * getTarifTER(bruto,status);
-
-totalTER_YTD += pph;
-
-if(r.periode === selected){
-    terCurrent += pph;
-}
+totalTER += bruto * getTarifTER(bruto,status);
 });
 
 let biayaJabatan = 500000 * rows.length;
@@ -229,34 +207,24 @@ let ptkp = PTKP[status] || 54000000;
 let pkp = Math.max(0, neto - ptkp);
 let pphFinal = tarifProgresif(pkp);
 
-let selisih = pphFinal - totalTER_YTD;
+let selisih = pphFinal - totalTER;
 let ket = selisih > 0 ? "Kurang Potong" : "Lebih Potong";
-
-currentData.push({
-nik,nama,project,periode:selected,
-bruto:totalBruto,neto,ptkp,pkp,
-pph_ter:terCurrent,
-pph_ter_ytd:totalTER_YTD,
-pph_final:pphFinal,
-selisih,
-keterangan:ket
-});
 
 html += `<tr>
 <td>${nik}</td>
 <td>${nama}</td>
 <td>${project}</td>
-<td>-</td>
-<td>-</td>
-<td>-</td>
-<td>${rows.find(r=>r.periode===selected)?.irregular || 0}</td>
+<td>${(+last.gaji_pokok||0).toFixed(0)}</td>
+<td>${(+last.tunjangan||0).toFixed(0)}</td>
+<td>${((+last.jkk||0)+(+last.jkm||0)+(+last.bpjs4||0)).toFixed(0)}</td>
+<td>${(+last.irregular||0).toFixed(0)}</td>
 <td>${totalBruto.toFixed(0)}</td>
 <td>${biayaJabatan.toFixed(0)}</td>
 <td>${totalIuran.toFixed(0)}</td>
 <td>${neto.toFixed(0)}</td>
 <td>${ptkp.toFixed(0)}</td>
 <td>${pkp.toFixed(0)}</td>
-<td>${terCurrent.toFixed(0)}</td>
+<td>${totalTER.toFixed(0)}</td>
 <td>${pphFinal.toFixed(0)}</td>
 <td>${selisih.toFixed(0)}</td>
 <td>${ket}</td>
@@ -266,55 +234,18 @@ html += `<tr>
 document.getElementById("tbody").innerHTML = html;
 }
 
-// ================= SAVE =================
+// SAVE
 async function saveTax(){
 if(currentData.length===0) return alert("Generate dulu");
-
-const { error } = await supabaseClient
-.from("tax_report")
-.insert(currentData);
-
-if(error){
-console.error(error);
-alert("Gagal simpan");
-}else{
-alert("Berhasil simpan");
-}
+await supabaseClient.from("tax_report").insert(currentData);
+alert("Saved");
 }
 
-// ================= RENDER =================
-function render(data){
-let html="";
-data.forEach(r=>{
-html += `<tr>
-<td>${r.nik}</td>
-<td>${r.nama}</td>
-<td>${r.project}</td>
-<td>-</td>
-<td>-</td>
-<td>-</td>
-<td>-</td>
-<td>${r.bruto}</td>
-<td>-</td>
-<td>-</td>
-<td>${r.neto}</td>
-<td>${r.ptkp}</td>
-<td>${r.pkp}</td>
-<td>${r.pph_ter}</td>
-<td>${r.pph_final}</td>
-<td>${r.selisih}</td>
-<td>${r.keterangan}</td>
-</tr>`;
-});
-document.getElementById("tbody").innerHTML = html;
-}
-
-// ================= BACK =================
+// BACK
 function goBack(){
 window.location.href="dashboard.html";
 }
 
-// INIT
 loadPeriode();
 </script>
 
