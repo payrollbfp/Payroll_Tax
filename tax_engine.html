@@ -13,12 +13,9 @@ body{font-family:Segoe UI;margin:0;background:#eef2f7;}
     padding:15px;
     display:flex;
     justify-content:space-between;
-    align-items:left;
+    align-items:center;
 }
-.header-right{
-    display:flex;
-    gap:10px;
-}
+.header-right{display:flex;gap:10px;}
 .container{padding:20px;}
 .card{background:white;padding:20px;border-radius:12px;box-shadow:0 6px 15px rgba(0,0,0,0.08);}
 button{padding:8px 14px;border:none;border-radius:6px;background:#3b82f6;color:white;cursor:pointer;}
@@ -33,7 +30,6 @@ th{background:#334155;color:white;}
 
 <div class="header">
     <h2>Tax Engine</h2>
-
     <div class="header-right">
         <select id="periodeSelect"></select>
         <button onclick="loadTax()">Generate</button>
@@ -145,12 +141,10 @@ return 0.05;
 // ================= PROGRESIF =================
 function tarifProgresif(pkp){
 let pajak=0;
-
 if(pkp>500000000){pajak+=(pkp-500000000)*0.30; pkp=500000000;}
 if(pkp>250000000){pajak+=(pkp-250000000)*0.25; pkp=250000000;}
 if(pkp>60000000){pajak+=(pkp-60000000)*0.15; pkp=60000000;}
 if(pkp>0){pajak+=pkp*0.05;}
-
 return pajak;
 }
 
@@ -212,7 +206,7 @@ rows.forEach(r=>{
 let gapok = +r.gaji_pokok||0;
 let tunj = +r.tunjangan||0;
 let premi = (+r.jkk||0)+(+r.jkm||0)+(+r.bpjs4||0);
-let thr = +r.irregular||0;
+let thr = +r.irregular||0; // ✅ THR dari irregular
 let iuran = (+r.jht2||0)+(+r.jp1||0);
 
 let bruto = gapok+tunj+premi+thr;
@@ -222,10 +216,8 @@ totalIuran += iuran;
 
 let pph = bruto * getTarifTER(bruto,status);
 
-// akumulasi
 totalTER_YTD += pph;
 
-// hanya periode ini
 if(r.periode === selected){
     terCurrent += pph;
 }
@@ -257,7 +249,7 @@ html += `<tr>
 <td>-</td>
 <td>-</td>
 <td>-</td>
-<td>-</td>
+<td>${rows.find(r=>r.periode===selected)?.irregular || 0}</td>
 <td>${totalBruto.toFixed(0)}</td>
 <td>${biayaJabatan.toFixed(0)}</td>
 <td>${totalIuran.toFixed(0)}</td>
