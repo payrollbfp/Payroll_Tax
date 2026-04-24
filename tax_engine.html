@@ -2,282 +2,218 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tax Engine</title>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
 <style>
-body{
-    font-family:Segoe UI,sans-serif;
-    margin:0;
-    background:#eef2f7;
-}
-.header{
-    background:#1e293b;
-    color:white;
-    padding:15px 20px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-}
-.container{
-    padding:20px;
-}
-.card{
-    background:white;
-    padding:20px;
-    border-radius:12px;
-    box-shadow:0 6px 15px rgba(0,0,0,0.08);
-}
-button{
-    padding:8px 14px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-    background:#3b82f6;
-    color:white;
-    margin-bottom:15px;
-}
-table{
-    width:100%;
-    border-collapse:collapse;
-    font-size:12px;
-}
-th,td{
-    border:1px solid #ddd;
-    padding:6px;
-    text-align:center;
-}
-th{
-    background:#334155;
-    color:white;
-}
+body{font-family:Segoe UI;margin:0;background:#eef2f7;}
+.header{background:#1e293b;color:white;padding:15px;display:flex;justify-content:space-between;}
+.container{padding:20px;}
+.card{background:white;padding:20px;border-radius:12px;box-shadow:0 6px 15px rgba(0,0,0,0.08);}
+button{padding:8px 14px;border:none;border-radius:6px;background:#3b82f6;color:white;cursor:pointer;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th,td{border:1px solid #ddd;padding:6px;text-align:center;}
+th{background:#334155;color:white;}
 </style>
 </head>
+
 <body>
 
 <div class="header">
-    <h2>Tax Engine</h2>
-    <button onclick="window.location.href='dashboard.html'">Back</button>
+<h2>Tax Engine</h2>
+<button onclick="loadTax()">Generate Tax</button>
 </div>
 
 <div class="container">
 <div class="card">
-    <button onclick="loadTax()">Generate Tax</button>
-
-    <table>
-        <thead>
-            <tr>
-                <th>NIK</th>
-                <th>Nama</th>
-                <th>Project</th>
-                <th>Gapok</th>
-                <th>Tunjangan</th>
-                <th>Premi Asuransi</th>
-                <th>THR</th>
-                <th>Bruto</th>
-                <th>Biaya Jabatan</th>
-                <th>Iuran Pensiun</th>
-                <th>Neto</th>
-                <th>PTKP</th>
-                <th>PKP</th>
-                <th>PPH TER</th>
-                <th>PPH21 Final</th>
-                <th>Selisih Pajak</th>
-                <th>Keterangan</th>
-            </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-    </table>
+<table>
+<thead>
+<tr>
+<th>NIK</th>
+<th>Nama</th>
+<th>Project</th>
+<th>Gapok</th>
+<th>Tunjangan</th>
+<th>Premi Asuransi</th>
+<th>THR</th>
+<th>Jumlah Penghasilan Bruto</th>
+<th>Biaya Jabatan</th>
+<th>Iuran Pensiun/JHT</th>
+<th>Jumlah Neto</th>
+<th>PTKP</th>
+<th>PKP</th>
+<th>PPH TER</th>
+<th>PPH 21 FINAL</th>
+<th>Selisih Pajak</th>
+<th>Keterangan</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
 </div>
 </div>
 
 <script>
 const SUPABASE_URL = "https://nwrbjbwjmkahjuuyizfq.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmJqYndqbWthaGp1dXlpemZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MjM4OTIsImV4cCI6MjA5MjQ5OTg5Mn0.n67pONlkoMqZguyoTwQQFJ0VBRfPaIVuVlPGxsajaGA";
-const MASTER_URL = "https://script.google.com/macros/s/AKfycbyHVKu4enshXUlPAlbQk4tOqJlaTnHlHEvl1K8zHmcod8MeAlR6yUEliUQPeLfl9AJfJA/exec";
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const PTKP = {
-    "TK/0":54000000,
-    "TK/1":58500000,
-    "TK/2":63000000,
-    "TK/3":67500000,
-    "K/0":58500000,
-    "K/1":63000000,
-    "K/2":67500000,
-    "K/3":72000000
+"TK/0":54000000,"TK/1":58500000,"TK/2":63000000,"TK/3":67500000,
+"K/0":58500000,"K/1":63000000,"K/2":67500000,"K/3":72000000
 };
 
+// ================= TER =================
 function getKategoriPTKP(status){
-    if(["TK/0","TK/1","K/0","K/1"].includes(status)) return "A";
-    if(["TK/2","TK/3","K/2"].includes(status)) return "B";
-    return "C";
+if(["TK/0","TK/1","K/0","K/1"].includes(status)) return "A";
+if(["TK/2","TK/3","K/2"].includes(status)) return "B";
+return "C";
 }
 
 function getTarifTER(bruto,status){
-    const kategori = getKategoriPTKP(status);
+const k = getKategoriPTKP(status);
 
-    if(kategori==="A"){
-        if(bruto<=5400000)return 0;
-        if(bruto<=5650000)return 0.0025;
-        if(bruto<=5950000)return 0.005;
-        if(bruto<=6300000)return 0.0075;
-        if(bruto<=6750000)return 0.01;
-        if(bruto<=7500000)return 0.0125;
-        if(bruto<=8550000)return 0.015;
-        if(bruto<=9650000)return 0.0175;
-        if(bruto<=10350000)return 0.02;
-        if(bruto<=10700000)return 0.025;
-        if(bruto<=11050000)return 0.03;
-        return 0.05;
-    }
-
-    if(kategori==="B"){
-        if(bruto<=6200000)return 0;
-        if(bruto<=6500000)return 0.0025;
-        if(bruto<=6850000)return 0.005;
-        if(bruto<=7300000)return 0.0075;
-        if(bruto<=9200000)return 0.01;
-        if(bruto<=10750000)return 0.015;
-        if(bruto<=11250000)return 0.02;
-        return 0.05;
-    }
-
-    if(bruto<=6600000)return 0;
-    if(bruto<=6950000)return 0.0025;
-    if(bruto<=7350000)return 0.005;
-    if(bruto<=7800000)return 0.0075;
-    if(bruto<=8850000)return 0.01;
-    if(bruto<=9800000)return 0.0125;
-    if(bruto<=10950000)return 0.015;
-    return 0.05;
+if(k==="A"){
+if(bruto<=5400000)return 0;
+if(bruto<=5650000)return 0.0025;
+if(bruto<=5950000)return 0.005;
+if(bruto<=6300000)return 0.0075;
+if(bruto<=6750000)return 0.01;
+if(bruto<=7500000)return 0.0125;
+if(bruto<=8550000)return 0.015;
+if(bruto<=9650000)return 0.0175;
+if(bruto<=10350000)return 0.02;
+if(bruto<=10700000)return 0.025;
+if(bruto<=11050000)return 0.03;
+return 0.05;
 }
 
+if(k==="B"){
+if(bruto<=6200000)return 0;
+if(bruto<=6500000)return 0.0025;
+if(bruto<=6850000)return 0.005;
+if(bruto<=7300000)return 0.0075;
+if(bruto<=9200000)return 0.01;
+if(bruto<=10750000)return 0.015;
+if(bruto<=11250000)return 0.02;
+return 0.05;
+}
+
+if(bruto<=6600000)return 0;
+if(bruto<=6950000)return 0.0025;
+if(bruto<=7350000)return 0.005;
+if(bruto<=7800000)return 0.0075;
+if(bruto<=8850000)return 0.01;
+if(bruto<=9800000)return 0.0125;
+if(bruto<=10950000)return 0.015;
+return 0.05;
+}
+
+// ================= PROGRESIF =================
 function tarifProgresif(pkp){
-    let pajak=0;
-    let sisa=pkp;
+let pajak=0;
 
-    if(sisa>500000000){
-        pajak+=(sisa-500000000)*0.30;
-        sisa=500000000;
-    }
-    if(sisa>250000000){
-        pajak+=(sisa-250000000)*0.25;
-        sisa=250000000;
-    }
-    if(sisa>60000000){
-        pajak+=(sisa-60000000)*0.15;
-        sisa=60000000;
-    }
-    if(sisa>0){
-        pajak+=sisa*0.05;
-    }
-    return pajak;
+if(pkp>500000000){pajak+=(pkp-500000000)*0.30; pkp=500000000;}
+if(pkp>250000000){pajak+=(pkp-250000000)*0.25; pkp=250000000;}
+if(pkp>60000000){pajak+=(pkp-60000000)*0.15; pkp=60000000;}
+if(pkp>0){pajak+=pkp*0.05;}
+
+return pajak;
 }
 
+// ================= MAIN =================
 async function loadTax(){
 
-    const { data: payrollData, error } = await supabaseClient
-        .from("payroll")
-        .select("*");
+const { data: payroll } = await supabaseClient.from("payroll").select("*");
+const { data: master } = await supabaseClient.from("master_payroll").select("*");
 
-    if(error){
-        alert("Gagal load payroll");
-        console.error(error);
-        return;
-    }
+let masterMap = {};
+master.forEach(m=>{
+masterMap[(m.nik||"").trim()] = m;
+});
 
-    const res = await fetch(MASTER_URL);
-    const masterJson = await res.json();
-    const masterData = masterJson.data;
+let group = {};
+payroll.forEach(r=>{
+let nik = (r.nik||"").trim();
+if(!group[nik]) group[nik]=[];
+group[nik].push(r);
+});
 
-    let masterMap = {};
-    masterData.forEach(emp=>{
-        masterMap[emp.NIK] = {
-            nama: emp.Nama,
-            project: emp.Project,
-            ptkp: emp.PTKP
-        };
-    });
+let html="";
 
-    let group = {};
-    payrollData.forEach(r=>{
-        if(!group[r.nik]) group[r.nik] = [];
-        group[r.nik].push(r);
-    });
+Object.keys(group).forEach(nik=>{
 
-    let html = "";
+const rows = group[nik];
+const m = masterMap[nik] || {};
 
-    Object.keys(group).forEach(nik=>{
+const nama = m.nama || "-";
+const project = m.project || "-";
+const status = (m.status_pajak || "TK/0").trim();
 
-        const rows = group[nik];
-        const master = masterMap[nik] || {};
+let totalBruto=0;
+let totalIuran=0;
+let totalTER=0;
 
-        const nama = master.nama || "-";
-        const project = master.project || "-";
-        const status = master.ptkp || "TK/0";
+rows.forEach(r=>{
 
-        let totalBruto=0;
-        let totalBiayaJabatan=0;
-        let totalIuran=0;
-        let totalNeto=0;
-        let totalPKP=0;
-        let totalTER=0;
+let gapok = parseFloat(r.gaji_pokok)||0;
+let tunj = parseFloat(r.tunjangan)||0;
+let jkk = parseFloat(r.jkk)||0;
+let jkm = parseFloat(r.jkm)||0;
+let bpjs4 = parseFloat(r.bpjs4)||0;
+let thr = parseFloat(r.irregular)||0;
+let jht2 = parseFloat(r.jht2)||0;
+let jp1 = parseFloat(r.jp1)||0;
 
-        rows.forEach(r=>{
-            let gapok = Number(r.gaji_pokok||0);
-            let tunjangan = Number(r.tunjangan||0);
-            let premi = Number(r.jkk||0)+Number(r.jkm||0)+Number(r.bpjs4||0);
-            let thr = Number(r.irregular||0);
-            let bruto = gapok+tunjangan+premi+thr;
+let premi = jkk + jkm + bpjs4;
+let bruto = gapok + tunj + premi + thr;
+let iuran = jht2 + jp1;
 
-            let biayaJabatan = 500000;
-            let iuran = Number(r.jht2||0)+Number(r.jp1||0);
-            let neto = bruto-biayaJabatan-iuran;
+totalBruto += bruto;
+totalIuran += iuran;
 
-            totalBruto += bruto;
-            totalBiayaJabatan += biayaJabatan;
-            totalIuran += iuran;
-            totalNeto += neto;
+// ✅ TER PER PERIODE
+let tarif = getTarifTER(bruto,status);
+let pph = bruto * tarif;
 
-            let tarifTER = getTarifTER(bruto,status);
-            totalTER += bruto*tarifTER;
-        });
+if(!isNaN(pph)) totalTER += pph;
 
-        let ptkp = PTKP[status] || 54000000;
-        totalPKP = Math.max(0,totalNeto-ptkp);
-        let pphFinal = tarifProgresif(totalPKP);
-        let selisih = pphFinal-totalTER;
-        let ket = selisih>0 ? "Kurang Potong" : "Lebih Potong";
+});
 
-        let first = rows[0];
+let biayaJabatan = 500000 * rows.length;
+let neto = totalBruto - biayaJabatan - totalIuran;
+let ptkp = PTKP[status] || 54000000;
+let pkp = Math.max(0, neto - ptkp);
+let pphFinal = tarifProgresif(pkp);
+let selisih = pphFinal - totalTER;
+let ket = selisih > 0 ? "Kurang Potong" : "Lebih Potong";
 
-        html += `
-        <tr>
-            <td>${nik}</td>
-            <td>${nama}</td>
-            <td>${project}</td>
-            <td>${first.gaji_pokok||0}</td>
-            <td>${first.tunjangan||0}</td>
-            <td>${(Number(first.jkk||0)+Number(first.jkm||0)+Number(first.bpjs4||0)).toFixed(0)}</td>
-            <td>${first.irregular||0}</td>
-            <td>${totalBruto.toFixed(0)}</td>
-            <td>${totalBiayaJabatan.toFixed(0)}</td>
-            <td>${totalIuran.toFixed(0)}</td>
-            <td>${totalNeto.toFixed(0)}</td>
-            <td>${ptkp.toFixed(0)}</td>
-            <td>${totalPKP.toFixed(0)}</td>
-            <td>${totalTER.toFixed(0)}</td>
-            <td>${pphFinal.toFixed(0)}</td>
-            <td>${selisih.toFixed(0)}</td>
-            <td>${ket}</td>
-        </tr>`;
-    });
+let first = rows[0];
 
-    document.getElementById("tbody").innerHTML = html;
+html += `
+<tr>
+<td>${nik}</td>
+<td>${nama}</td>
+<td>${project}</td>
+<td>${first.gaji_pokok||0}</td>
+<td>${first.tunjangan||0}</td>
+<td>${(parseFloat(first.jkk||0)+parseFloat(first.jkm||0)+parseFloat(first.bpjs4||0)).toFixed(0)}</td>
+<td>${first.irregular||0}</td>
+<td>${totalBruto.toFixed(0)}</td>
+<td>${biayaJabatan.toFixed(0)}</td>
+<td>${totalIuran.toFixed(0)}</td>
+<td>${neto.toFixed(0)}</td>
+<td>${ptkp.toFixed(0)}</td>
+<td>${pkp.toFixed(0)}</td>
+<td>${totalTER.toFixed(0)}</td>
+<td>${pphFinal.toFixed(0)}</td>
+<td>${selisih.toFixed(0)}</td>
+<td>${ket}</td>
+</tr>`;
+});
+
+document.getElementById("tbody").innerHTML = html;
 }
 </script>
 
