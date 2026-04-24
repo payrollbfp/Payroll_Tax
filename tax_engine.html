@@ -7,10 +7,22 @@
 
 <style>
 body{font-family:Segoe UI;margin:0;background:#eef2f7;}
-.header{background:#1e293b;color:white;padding:15px;display:flex;justify-content:space-between;}
+.header{
+    background:#1e293b;
+    color:white;
+    padding:15px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.header-right{
+    display:flex;
+    gap:10px;
+}
 .container{padding:20px;}
 .card{background:white;padding:20px;border-radius:12px;box-shadow:0 6px 15px rgba(0,0,0,0.08);}
 button{padding:8px 14px;border:none;border-radius:6px;background:#3b82f6;color:white;cursor:pointer;}
+select{padding:8px;border-radius:6px;}
 table{width:100%;border-collapse:collapse;font-size:12px;}
 th,td{border:1px solid #ddd;padding:6px;text-align:left;}
 th{background:#334155;color:white;}
@@ -20,8 +32,14 @@ th{background:#334155;color:white;}
 <body>
 
 <div class="header">
-<h2>Tax Engine</h2>
-<button onclick="loadTax()">Generate Tax</button>
+    <h2>Tax Engine</h2>
+
+    <div class="header-right">
+        <select id="periodeSelect"></select>
+        <button onclick="loadTax()">Generate</button>
+        <button onclick="saveTax()">Save</button>
+        <button onclick="goBack()">Back</button>
+    </div>
 </div>
 
 <div class="container">
@@ -56,13 +74,28 @@ th{background:#334155;color:white;}
 <script>
 const SUPABASE_URL = "https://nwrbjbwjmkahjuuyizfq.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmJqYndqbWthaGp1dXlpemZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MjM4OTIsImV4cCI6MjA5MjQ5OTg5Mn0.n67pONlkoMqZguyoTwQQFJ0VBRfPaIVuVlPGxsajaGA";
-
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentData = [];
 
 const PTKP = {
 "TK/0":54000000,"TK/1":58500000,"TK/2":63000000,"TK/3":67500000,
 "K/0":58500000,"K/1":63000000,"K/2":67500000,"K/3":72000000
 };
+
+// ================= LOAD PERIODE =================
+async function loadPeriode(){
+    const { data } = await supabaseClient.from("payroll").select("periode");
+
+    const unique = [...new Set(data.map(d=>d.periode))];
+
+    const select = document.getElementById("periodeSelect");
+    select.innerHTML = "";
+
+    unique.forEach(p=>{
+        select.innerHTML += `<option value="${p}">${p}</option>`;
+    });
+}
 
 // ================= TER =================
 function getKategoriPTKP(status){
@@ -125,8 +158,27 @@ return pajak;
 // ================= MAIN =================
 async function loadTax(){
 
-const { data: payroll } = await supabaseClient.from("payroll").select("*");
-const { data: master } = await supabaseClient.from("master_payroll").select("*");
+const periode = document.getElementById("periodeSelect").value;
+
+// cek existing
+const { data: existing } = await supabaseClient
+.from("tax_report")
+.select("*")
+.eq("periode", periode);
+
+if(existing && existing.length>0){
+    render(existing);
+    return;
+}
+
+const { data: payroll } = await supabaseClient
+.from("payroll")
+.select("*")
+.eq("periode", periode);
+
+const { data: master } = await supabaseClient
+.from("master_payroll")
+.select("*");
 
 let masterMap = {};
 master.forEach(m=>{
@@ -140,6 +192,7 @@ if(!group[nik]) group[nik]=[];
 group[nik].push(r);
 });
 
+currentData = [];
 let html="";
 
 Object.keys(group).forEach(nik=>{
@@ -151,34 +204,22 @@ const nama = m.nama || "-";
 const project = m.project || "-";
 const status = (m.status_pajak || "TK/0").trim();
 
-let totalBruto=0;
-let totalIuran=0;
-let totalTER=0;
+let totalBruto=0,totalIuran=0,totalTER=0;
 
 rows.forEach(r=>{
+let gapok = +r.gaji_pokok||0;
+let tunj = +r.tunjangan||0;
+let premi = (+r.jkk||0)+(+r.jkm||0)+(+r.bpjs4||0);
+let thr = +r.irregular||0;
+let iuran = (+r.jht2||0)+(+r.jp1||0);
 
-let gapok = parseFloat(r.gaji_pokok)||0;
-let tunj = parseFloat(r.tunjangan)||0;
-let jkk = parseFloat(r.jkk)||0;
-let jkm = parseFloat(r.jkm)||0;
-let bpjs4 = parseFloat(r.bpjs4)||0;
-let thr = parseFloat(r.irregular)||0;
-let jht2 = parseFloat(r.jht2)||0;
-let jp1 = parseFloat(r.jp1)||0;
-
-let premi = jkk + jkm + bpjs4;
-let bruto = gapok + tunj + premi + thr;
-let iuran = jht2 + jp1;
+let bruto = gapok+tunj+premi+thr;
 
 totalBruto += bruto;
 totalIuran += iuran;
 
-// ✅ TER PER PERIODE
-let tarif = getTarifTER(bruto,status);
-let pph = bruto * tarif;
-
-if(!isNaN(pph)) totalTER += pph;
-
+// TER per periode
+totalTER += bruto * getTarifTER(bruto,status);
 });
 
 let biayaJabatan = 500000 * rows.length;
@@ -189,17 +230,25 @@ let pphFinal = tarifProgresif(pkp);
 let selisih = pphFinal - totalTER;
 let ket = selisih > 0 ? "Kurang Potong" : "Lebih Potong";
 
-let first = rows[0];
+let rowData = {
+nik,nama,project,periode,
+bruto:totalBruto,neto,ptkp,pkp,
+pph_ter:totalTER,
+pph_final:pphFinal,
+selisih,
+keterangan:ket
+};
 
-html += `
-<tr>
+currentData.push(rowData);
+
+html += `<tr>
 <td>${nik}</td>
 <td>${nama}</td>
 <td>${project}</td>
-<td>${first.gaji_pokok||0}</td>
-<td>${first.tunjangan||0}</td>
-<td>${(parseFloat(first.jkk||0)+parseFloat(first.jkm||0)+parseFloat(first.bpjs4||0)).toFixed(0)}</td>
-<td>${first.irregular||0}</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
 <td>${totalBruto.toFixed(0)}</td>
 <td>${biayaJabatan.toFixed(0)}</td>
 <td>${totalIuran.toFixed(0)}</td>
@@ -215,6 +264,61 @@ html += `
 
 document.getElementById("tbody").innerHTML = html;
 }
+
+// ================= SAVE =================
+async function saveTax(){
+
+if(currentData.length===0){
+return alert("Generate dulu");
+}
+
+const { error } = await supabaseClient
+.from("tax_report")
+.insert(currentData);
+
+if(error){
+console.error(error);
+alert("Gagal simpan");
+}else{
+alert("Berhasil simpan");
+}
+}
+
+// ================= RENDER =================
+function render(data){
+let html="";
+data.forEach(r=>{
+html += `<tr>
+<td>${r.nik}</td>
+<td>${r.nama}</td>
+<td>${r.project}</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>${r.bruto}</td>
+<td>-</td>
+<td>-</td>
+<td>${r.neto}</td>
+<td>${r.ptkp}</td>
+<td>${r.pkp}</td>
+<td>${r.pph_ter}</td>
+<td>${r.pph_final}</td>
+<td>${r.selisih}</td>
+<td>${r.keterangan}</td>
+</tr>`;
+});
+document.getElementById("tbody").innerHTML = html;
+}
+
+// ================= BACK =================
+function goBack(){
+window.location.href="dashboard.html";
+}
+
+// INIT
+loadPeriode();
+
 </script>
 
 </body>
