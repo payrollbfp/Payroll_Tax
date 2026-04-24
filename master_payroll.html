@@ -294,7 +294,7 @@ function renderTable(){
             <td>${item.jenis_kelamin || ''}</td>
             <td>${item.alamat || ''}</td>
             <td>${item.status_pajak || ''}</td>
-            <td>${item.tmt || ''}</td>
+            <td>${formatTanggal(item.tmt)}</td>
             <td>${item.project || ''}</td>
         </tr>`;
     });
