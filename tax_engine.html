@@ -60,7 +60,7 @@ th{background:#334155;color:white;}
 <th>Jumlah Neto</th>
 <th>PTKP</th>
 <th>PKP</th>
-<th>PPH TER</th>
+<th>PPH TER (Periode)</th>
 <th>PPH 21 FINAL</th>
 <th>Selisih Pajak</th>
 <th>Keterangan</th>
@@ -170,7 +170,7 @@ if(existing && existing.length>0){
     return;
 }
 
-// 🔥 AMBIL DATA SAMPAI PERIODE TERPILIH (YTD)
+// ambil YTD
 const { data: payroll } = await supabaseClient
 .from("payroll")
 .select("*")
@@ -204,7 +204,9 @@ const nama = m.nama || "-";
 const project = m.project || "-";
 const status = (m.status_pajak || "TK/0").trim();
 
-let totalBruto=0,totalIuran=0,totalTER=0;
+let totalBruto=0,totalIuran=0;
+let totalTER_YTD=0;
+let terCurrent=0;
 
 rows.forEach(r=>{
 let gapok = +r.gaji_pokok||0;
@@ -218,33 +220,35 @@ let bruto = gapok+tunj+premi+thr;
 totalBruto += bruto;
 totalIuran += iuran;
 
-// TER tetap per periode
-totalTER += bruto * getTarifTER(bruto,status);
+let pph = bruto * getTarifTER(bruto,status);
+
+// akumulasi
+totalTER_YTD += pph;
+
+// hanya periode ini
+if(r.periode === selected){
+    terCurrent += pph;
+}
 });
 
-let jumlahPeriode = rows.length;
-let biayaJabatan = 500000 * jumlahPeriode;
-
+let biayaJabatan = 500000 * rows.length;
 let neto = totalBruto - biayaJabatan - totalIuran;
 let ptkp = PTKP[status] || 54000000;
 let pkp = Math.max(0, neto - ptkp);
-
-// 🔥 FINAL = AKUMULASI
 let pphFinal = tarifProgresif(pkp);
 
-let selisih = pphFinal - totalTER;
+let selisih = pphFinal - totalTER_YTD;
 let ket = selisih > 0 ? "Kurang Potong" : "Lebih Potong";
 
-let rowData = {
+currentData.push({
 nik,nama,project,periode:selected,
 bruto:totalBruto,neto,ptkp,pkp,
-pph_ter:totalTER,
+pph_ter:terCurrent,
+pph_ter_ytd:totalTER_YTD,
 pph_final:pphFinal,
 selisih,
 keterangan:ket
-};
-
-currentData.push(rowData);
+});
 
 html += `<tr>
 <td>${nik}</td>
@@ -260,7 +264,7 @@ html += `<tr>
 <td>${neto.toFixed(0)}</td>
 <td>${ptkp.toFixed(0)}</td>
 <td>${pkp.toFixed(0)}</td>
-<td>${totalTER.toFixed(0)}</td>
+<td>${terCurrent.toFixed(0)}</td>
 <td>${pphFinal.toFixed(0)}</td>
 <td>${selisih.toFixed(0)}</td>
 <td>${ket}</td>
@@ -272,10 +276,7 @@ document.getElementById("tbody").innerHTML = html;
 
 // ================= SAVE =================
 async function saveTax(){
-
-if(currentData.length===0){
-return alert("Generate dulu");
-}
+if(currentData.length===0) return alert("Generate dulu");
 
 const { error } = await supabaseClient
 .from("tax_report")
@@ -323,7 +324,6 @@ window.location.href="dashboard.html";
 
 // INIT
 loadPeriode();
-
 </script>
 
 </body>
