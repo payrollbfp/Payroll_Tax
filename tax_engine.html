@@ -86,8 +86,7 @@ const PTKP = {
 // ================= LOAD PERIODE =================
 async function loadPeriode(){
     const { data } = await supabaseClient.from("payroll").select("periode");
-
-    const unique = [...new Set(data.map(d=>d.periode))];
+    const unique = [...new Set(data.map(d=>d.periode))].sort();
 
     const select = document.getElementById("periodeSelect");
     select.innerHTML = "";
@@ -158,23 +157,24 @@ return pajak;
 // ================= MAIN =================
 async function loadTax(){
 
-const periode = document.getElementById("periodeSelect").value;
+const selected = document.getElementById("periodeSelect").value;
 
 // cek existing
 const { data: existing } = await supabaseClient
 .from("tax_report")
 .select("*")
-.eq("periode", periode);
+.eq("periode", selected);
 
 if(existing && existing.length>0){
     render(existing);
     return;
 }
 
+// 🔥 AMBIL DATA SAMPAI PERIODE TERPILIH (YTD)
 const { data: payroll } = await supabaseClient
 .from("payroll")
 .select("*")
-.eq("periode", periode);
+.lte("periode", selected);
 
 const { data: master } = await supabaseClient
 .from("master_payroll")
@@ -218,20 +218,25 @@ let bruto = gapok+tunj+premi+thr;
 totalBruto += bruto;
 totalIuran += iuran;
 
-// TER per periode
+// TER tetap per periode
 totalTER += bruto * getTarifTER(bruto,status);
 });
 
-let biayaJabatan = 500000 * rows.length;
+let jumlahPeriode = rows.length;
+let biayaJabatan = 500000 * jumlahPeriode;
+
 let neto = totalBruto - biayaJabatan - totalIuran;
 let ptkp = PTKP[status] || 54000000;
 let pkp = Math.max(0, neto - ptkp);
+
+// 🔥 FINAL = AKUMULASI
 let pphFinal = tarifProgresif(pkp);
+
 let selisih = pphFinal - totalTER;
 let ket = selisih > 0 ? "Kurang Potong" : "Lebih Potong";
 
 let rowData = {
-nik,nama,project,periode,
+nik,nama,project,periode:selected,
 bruto:totalBruto,neto,ptkp,pkp,
 pph_ter:totalTER,
 pph_final:pphFinal,
