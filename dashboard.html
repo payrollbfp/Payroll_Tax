@@ -100,25 +100,25 @@ body{
 <div class="container">
     <div class="dashboard-grid">
 
-        <div class="card" onclick="openMenu('master')">
+        <div class="card" onclick="window.location.href='master_payroll.html'">
             <div class="icon">👥</div>
             <h2>Master Database Pajak</h2>
             <p>Kelola Database Pajak karyawan</p>
         </div>
 
-        <div class="card" onclick="openMenu('payroll')">
+        <div class="card" onclick="window.location.href='payroll_final.html'">
             <div class="icon">💰</div>
             <h2>Payroll Input</h2>
             <p>Input Komponen Gaji</p>
         </div>
 
-        <div class="card" onclick="openMenu('tax')">
+        <div class="card" onclick="window.location.href='tax_engine.html'">
             <div class="icon">🧾</div>
             <h2>Tax Engine</h2>
             <p>Hitung PPh21</p>
         </div>
 
-        <div class="card" onclick="openMenu('report')">
+        <div class="card" onclick="window.location.href='report.html'">
             <div class="icon">📊</div>
             <h2>Report</h2>
             <p>Laporan payroll</p>
@@ -130,25 +130,6 @@ body{
 <script>
 function logout(){
     window.location.href = "index.html";
-}
-
-function openMenu(menu){
-    switch(menu){
-        case "master":
-            window.location.href = "master_payroll.html";
-            break;
-        case "payroll":
-            window.location.href = "payroll_input.html";
-            break;
-        case "tax":
-            window.location.href = "tax_engine.html";
-            break;
-        case "report":
-            window.location.href = "report.html";
-            break;
-        default:
-            alert("Menu tidak ditemukan");
-    }
 }
 </script>
 
