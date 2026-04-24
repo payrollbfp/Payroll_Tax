@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Master Payroll Karyawan</title>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
 <style>
 *{
     margin:0;
@@ -105,13 +107,11 @@ th{
 
 <div class="container">
 
-    <!-- SEARCH -->
     <div class="search-box">
         <input type="text" id="searchNama" placeholder="Search by Nama">
         <button onclick="searchPayroll()">Search</button>
     </div>
 
-    <!-- TABLE -->
     <table>
         <thead>
             <tr>
@@ -129,43 +129,42 @@ th{
         <tbody id="payrollTable"></tbody>
     </table>
 
-    <!-- PAGINATION -->
     <div class="pagination" id="pagination"></div>
 
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbxrtvj3yyggGvCUkIuxlhWpFXyFHo52ioxckYumyOcF3LY6nM1pe_hYbiE-brPHTy44uw/exec";
+const SUPABASE_URL = "https://YOUR_PROJECT.supabase.co";
+const SUPABASE_KEY = "YOUR_ANON_KEY";
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let payrollData = [];
 let filteredData = [];
 let currentPage = 1;
 const rowsPerPage = 20;
 
-// LOAD DATA
+/* LOAD DATA */
 async function loadPayroll(){
-    try{
-        const res = await fetch(API_URL + "?action=getPayroll");
-        const result = await res.json();
+    const { data, error } = await supabaseClient
+        .from("master_payroll")
+        .select("*")
+        .order("nama", { ascending: true });
 
-        if(!result.success){
-            alert(result.message || "Gagal ambil data");
-            return;
-        }
-
-        payrollData = result.data;
-        filteredData = payrollData;
-        currentPage = 1;
-        renderTable();
-        renderPagination();
-
-    }catch(err){
-        console.error(err);
-        alert("Gagal load data (cek API)");
+    if(error){
+        console.error(error);
+        alert("Gagal load data master payroll");
+        return;
     }
+
+    payrollData = data;
+    filteredData = data;
+    currentPage = 1;
+
+    renderTable();
+    renderPagination();
 }
 
-// RENDER TABLE
+/* RENDER TABLE */
 function renderTable(){
     const start = (currentPage - 1) * rowsPerPage;
     const end = start + rowsPerPage;
@@ -176,27 +175,27 @@ function renderTable(){
     pageData.forEach(item=>{
         rows += `
         <tr>
-            <td>${item[0] || ""}</td>
-            <td>${item[1] || ""}</td>
-            <td>${item[2] || ""}</td>
-            <td>${item[3] || ""}</td>
-            <td>${item[4] || ""}</td>
-            <td>${item[5] || ""}</td>
-            <td>${item[6] || ""}</td>
-            <td>${item[7] || ""}</td>
-            <td>${item[8] || ""}</td>
+            <td>${item.nopeg || ""}</td>
+            <td>${item.nik || ""}</td>
+            <td>${item.npwp || ""}</td>
+            <td>${item.nama || ""}</td>
+            <td>${item.jenis_kelamin || ""}</td>
+            <td>${item.alamat || ""}</td>
+            <td>${item.status_pajak || ""}</td>
+            <td>${item.tmt || ""}</td>
+            <td>${item.project || ""}</td>
         </tr>`;
     });
 
     document.getElementById("payrollTable").innerHTML = rows;
 }
 
-// SEARCH NAMA
+/* SEARCH */
 function searchPayroll(){
     const keyword = document.getElementById("searchNama").value.toLowerCase();
 
     filteredData = payrollData.filter(item =>
-        (item[3] || "").toLowerCase().includes(keyword)
+        (item.nama || "").toLowerCase().includes(keyword)
     );
 
     currentPage = 1;
@@ -204,21 +203,14 @@ function searchPayroll(){
     renderPagination();
 }
 
-// PAGINATION
+/* PAGINATION */
 function renderPagination(){
     const totalPages = Math.ceil(filteredData.length / rowsPerPage);
     let html = "";
 
     html += `<button onclick="changePage(${currentPage-1})" ${currentPage===1?'disabled':''}>Previous</button>`;
 
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, startPage + 4);
-
-    if(endPage - startPage < 4){
-        startPage = Math.max(1, endPage - 4);
-    }
-
-    for(let i=startPage; i<=endPage; i++){
+    for(let i=1; i<=totalPages; i++){
         html += `<button class="${i===currentPage?'active-page':''}" onclick="changePage(${i})">${i}</button>`;
     }
 
@@ -227,7 +219,7 @@ function renderPagination(){
     document.getElementById("pagination").innerHTML = html;
 }
 
-// CHANGE PAGE
+/* CHANGE PAGE */
 function changePage(page){
     const totalPages = Math.ceil(filteredData.length / rowsPerPage);
     if(page < 1 || page > totalPages) return;
@@ -237,7 +229,6 @@ function changePage(page){
     renderPagination();
 }
 
-// INIT
 window.onload = loadPayroll;
 </script>
 
