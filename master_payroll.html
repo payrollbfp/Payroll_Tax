@@ -27,9 +27,6 @@ body{
     justify-content:space-between;
     align-items:center;
 }
-.header h1{
-    font-size:24px;
-}
 .back-btn{
     padding:10px 16px;
     border:none;
@@ -48,16 +45,13 @@ body{
     border-radius:12px;
     box-shadow:0 4px 12px rgba(0,0,0,0.08);
 }
-.upload-box{
+.upload-box,.search-box{
     display:flex;
     gap:10px;
-    flex-wrap:wrap;
     margin-bottom:20px;
+    flex-wrap:wrap;
 }
-.upload-box input{
-    padding:8px;
-}
-.upload-box button{
+button{
     padding:10px 16px;
     border:none;
     border-radius:6px;
@@ -67,26 +61,8 @@ body{
 .btn-preview{ background:#3b82f6; color:white; }
 .btn-save{ background:#10b981; color:white; }
 .btn-replace{ background:#f59e0b; color:white; }
+.btn-search{ background:#334155; color:white; }
 
-.search-box{
-    display:flex;
-    gap:10px;
-    margin-bottom:20px;
-}
-.search-box input{
-    padding:10px;
-    border:1px solid #ccc;
-    border-radius:6px;
-    width:250px;
-}
-.search-box button{
-    padding:10px 16px;
-    border:none;
-    border-radius:6px;
-    background:#334155;
-    color:white;
-    cursor:pointer;
-}
 table{
     width:100%;
     border-collapse:collapse;
@@ -95,7 +71,6 @@ th,td{
     padding:10px;
     border:1px solid #ddd;
     font-size:13px;
-    text-align:left;
 }
 th{
     background:#334155;
@@ -104,15 +79,8 @@ th{
 .pagination{
     margin-top:20px;
     display:flex;
-    justify-content:center;
     gap:8px;
-    flex-wrap:wrap;
-}
-.pagination button{
-    padding:8px 12px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
+    justify-content:center;
 }
 .active-page{
     background:#1e293b;
@@ -128,7 +96,7 @@ th{
 <body>
 
 <div class="header">
-    <h1>Master Payroll Karyawan</h1>
+    <h2>Master Payroll Karyawan</h2>
     <button class="back-btn" onclick="window.location.href='dashboard.html'">Back</button>
 </div>
 
@@ -143,27 +111,27 @@ th{
 </div>
 
 <div class="search-box">
-    <input type="text" id="searchNama" placeholder="Search by Nama">
-    <button onclick="searchPayroll()">Search</button>
+    <input type="text" id="searchNama" placeholder="Cari Nama..." style="padding:10px; width:250px;">
+    <button class="btn-search" onclick="searchPayroll()">Search</button>
 </div>
 
 <p id="loading" class="loading">⏳ Processing...</p>
 
 <table>
-    <thead>
-        <tr>
-            <th>Nopeg</th>
-            <th>NIK</th>
-            <th>NPWP</th>
-            <th>Nama</th>
-            <th>Jenis Kelamin</th>
-            <th>Alamat</th>
-            <th>Status Pajak</th>
-            <th>TMT</th>
-            <th>Project</th>
-        </tr>
-    </thead>
-    <tbody id="payrollTable"></tbody>
+<thead>
+<tr>
+    <th>Nopeg</th>
+    <th>NIK</th>
+    <th>NPWP</th>
+    <th>Nama</th>
+    <th>Jenis Kelamin</th>
+    <th>Alamat</th>
+    <th>Status Pajak</th>
+    <th>TMT</th>
+    <th>Project</th>
+</tr>
+</thead>
+<tbody id="payrollTable"></tbody>
 </table>
 
 <div class="pagination" id="pagination"></div>
@@ -182,14 +150,14 @@ let uploadData = [];
 let currentPage = 1;
 const rowsPerPage = 20;
 
-/* LOAD DATA */
+/* ================= LOAD DATA ================= */
 async function loadPayroll(){
     loading(true);
 
     const { data, error } = await supabaseClient
         .from("master_payroll")
         .select("*")
-        .order("nama",{ascending:true});
+        .order("nama");
 
     loading(false);
 
@@ -199,15 +167,13 @@ async function loadPayroll(){
         return;
     }
 
-    payrollData = data;
-    filteredData = data;
-    currentPage = 1;
-
+    payrollData = data || [];
+    filteredData = payrollData;
     renderTable();
     renderPagination();
 }
 
-/* PREVIEW EXCEL */
+/* ================= PREVIEW FILE ================= */
 function previewFile(){
     const file = document.getElementById("fileInput").files[0];
     if(!file) return alert("Pilih file Excel");
@@ -216,7 +182,19 @@ function previewFile(){
     reader.onload = function(e){
         const workbook = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        uploadData = XLSX.utils.sheet_to_json(sheet);
+        const raw = XLSX.utils.sheet_to_json(sheet);
+
+        uploadData = raw.map(row => ({
+            nopeg: row.Nopeg || '',
+            nik: row.NIK || '',
+            npwp: row.NPWP || '',
+            nama: row.Nama || '',
+            jenis_kelamin: row["Jenis Kelamin"] || '',
+            alamat: row.Alamat || '',
+            status_pajak: row["Status Pajak"] || '',
+            tmt: row.TMT || '',
+            project: row.Project || ''
+        }));
 
         payrollData = uploadData;
         filteredData = uploadData;
@@ -228,7 +206,7 @@ function previewFile(){
     reader.readAsArrayBuffer(file);
 }
 
-/* SAVE DATA */
+/* ================= SAVE ================= */
 async function saveData(){
     if(uploadData.length===0) return alert("Tidak ada data upload");
 
@@ -249,7 +227,7 @@ async function saveData(){
     }
 }
 
-/* REPLACE DATA */
+/* ================= REPLACE ================= */
 async function replaceData(){
     if(uploadData.length===0) return alert("Tidak ada data upload");
     if(!confirm("Replace semua data master payroll?")) return;
@@ -276,86 +254,76 @@ async function replaceData(){
     }
 }
 
-/* RENDER TABLE */
+/* ================= RENDER ================= */
 function renderTable(){
     const start = (currentPage-1)*rowsPerPage;
-    const end = start+rowsPerPage;
-    const pageData = filteredData.slice(start,end);
+    const pageData = filteredData.slice(start,start+rowsPerPage);
 
-    let rows = "";
+    let html = "";
 
     pageData.forEach(item=>{
-        rows += `
+        html += `
         <tr>
-            <td>${item.nopeg || ''}</td>
-            <td>${item.nik || ''}</td>
-            <td>${item.npwp || ''}</td>
-            <td>${item.nama || ''}</td>
-            <td>${item.jenis_kelamin || ''}</td>
-            <td>${item.alamat || ''}</td>
-            <td>${item.status_pajak || ''}</td>
+            <td>${item.nopeg||''}</td>
+            <td>${item.nik||''}</td>
+            <td>${item.npwp||''}</td>
+            <td>${item.nama||''}</td>
+            <td>${item.jenis_kelamin||''}</td>
+            <td>${item.alamat||''}</td>
+            <td>${item.status_pajak||''}</td>
             <td>${formatTanggal(item.tmt)}</td>
-            <td>${item.project || ''}</td>
+            <td>${item.project||''}</td>
         </tr>`;
     });
 
-    document.getElementById("payrollTable").innerHTML = rows;
+    document.getElementById("payrollTable").innerHTML = html;
 }
 
-/* SEARCH */
+/* ================= SEARCH ================= */
 function searchPayroll(){
-    const keyword = document.getElementById("searchNama").value.toLowerCase();
-
-    filteredData = payrollData.filter(item =>
-        (item.nama || '').toLowerCase().includes(keyword)
+    const key = document.getElementById("searchNama").value.toLowerCase();
+    filteredData = payrollData.filter(x =>
+        (x.nama||'').toLowerCase().includes(key)
     );
-
     currentPage = 1;
     renderTable();
     renderPagination();
 }
 
-/* PAGINATION */
+/* ================= PAGINATION ================= */
 function renderPagination(){
-    const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+    const totalPages = Math.ceil(filteredData.length/rowsPerPage);
     let html = "";
-
-    html += `<button onclick="changePage(${currentPage-1})" ${currentPage===1?'disabled':''}>Prev</button>`;
 
     for(let i=1;i<=totalPages;i++){
         html += `<button class="${i===currentPage?'active-page':''}" onclick="changePage(${i})">${i}</button>`;
     }
 
-    html += `<button onclick="changePage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>Next</button>`;
-
     document.getElementById("pagination").innerHTML = html;
 }
-function formatTanggal(value){
-    if(!value) return '';
 
-    // Jika angka excel
-    if(typeof value === 'number'){
-        const excelDate = new Date((value - 25569) * 86400 * 1000);
-        return excelDate.toLocaleDateString('id-ID');
-    }
-
-    // Jika string tanggal biasa
-    const date = new Date(value);
-    if(isNaN(date)) return value;
-
-    return date.toLocaleDateString('id-ID');
-}
-/* CHANGE PAGE */
 function changePage(page){
-    const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-    if(page<1 || page>totalPages) return;
-
     currentPage = page;
     renderTable();
     renderPagination();
 }
 
-/* LOADING */
+/* ================= FORMAT TANGGAL ================= */
+function formatTanggal(value){
+    if(!value) return '';
+
+    if(typeof value === 'number'){
+        const date = new Date((value-25569)*86400*1000);
+        return date.toLocaleDateString('id-ID');
+    }
+
+    const date = new Date(value);
+    if(isNaN(date)) return value;
+
+    return date.toLocaleDateString('id-ID');
+}
+
+/* ================= LOADING ================= */
 function loading(show){
     document.getElementById("loading").style.display = show ? "block":"none";
 }
