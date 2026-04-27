@@ -124,7 +124,6 @@ function loading(show){
     document.getElementById("loading").style.display = show ? "block" : "none";
 }
 
-/* ================= PREVIEW FILE ================= */
 function previewFile(){
     const file = document.getElementById("fileInput").files[0];
     if(!file){
@@ -156,7 +155,8 @@ function previewFile(){
             jht2: Number(r["JHT 2%"]) || 0,
             jp2: Number(r["JP 2%"]) || 0,
             jp1: Number(r["JP 1%"]) || 0,
-            potongan: Number(r.Potongan) || 0
+            potongan: Number(r.Potongan) || 0,
+            irregular: Number(r["Irregular Income"]) || 0
         }));
 
         renderTable(payrollData);
@@ -166,7 +166,6 @@ function previewFile(){
     reader.readAsArrayBuffer(file);
 }
 
-/* ================= RENDER ================= */
 function renderTable(data){
     const tbody = document.getElementById("tbody");
     tbody.innerHTML = "";
@@ -195,6 +194,7 @@ function renderTable(data){
                     JHT2: ${row.jht2}<br>
                     JP2: ${row.jp2} |
                     JP1: ${row.jp1}<br>
+                    Irregular Income: ${row.irregular}<br>
                     Potongan: ${row.potongan}
                 </div>
             </td>
@@ -212,7 +212,6 @@ function deleteRow(index){
     renderTable(payrollData);
 }
 
-/* ================= LOAD ================= */
 async function loadAllPayrollData(){
     loading(true);
 
@@ -232,7 +231,6 @@ async function loadAllPayrollData(){
     renderTable(payrollData);
 }
 
-/* ================= SAVE ================= */
 async function saveData(){
     if(payrollData.length === 0){
         alert("Tidak ada data preview");
@@ -267,7 +265,6 @@ async function saveData(){
     }
 }
 
-/* ================= REPLACE ================= */
 async function replaceByPeriod(){
     if(payrollData.length === 0){
         alert("Tidak ada data");
