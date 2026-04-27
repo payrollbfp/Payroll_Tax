@@ -111,7 +111,6 @@ th{
 <script>
 const SUPABASE_URL = "https://nwrbjbwjmkahjuuyizfq.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmJqYndqbWthaGp1dXlpemZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MjM4OTIsImV4cCI6MjA5MjQ5OTg5Mn0.n67pONlkoMqZguyoTwQQFJ0VBRfPaIVuVlPGxsajaGA";
-
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let payrollData = [];
@@ -156,7 +155,7 @@ function previewFile(){
             jp2: Number(r["JP 2%"]) || 0,
             jp1: Number(r["JP 1%"]) || 0,
             potongan: Number(r.Potongan) || 0,
-            irregular: Number(r["Irregular Income"]) || 0
+            irregular: Number(r["Irregular Income"] ?? r["Irregular"] ?? 0) || 0
         }));
 
         renderTable(payrollData);
@@ -227,28 +226,17 @@ async function loadAllPayrollData(){
         return;
     }
 
-    payrollData = data;
+    payrollData = data.map(r => ({
+        ...r,
+        irregular: Number(r.irregular) || 0
+    }));
+
     renderTable(payrollData);
 }
 
 async function saveData(){
     if(payrollData.length === 0){
         alert("Tidak ada data preview");
-        return;
-    }
-
-    const periode = payrollData[0].periode;
-
-    const { data: existing } = await supabaseClient
-        .from("payroll")
-        .select("nik")
-        .eq("periode", periode);
-
-    const existingNik = existing.map(x=>x.nik);
-    const duplicateNik = payrollData.filter(x=>existingNik.includes(x.nik));
-
-    if(duplicateNik.length > 0){
-        alert("Duplicate NIK: " + duplicateNik.map(x=>x.nik).join(", "));
         return;
     }
 
