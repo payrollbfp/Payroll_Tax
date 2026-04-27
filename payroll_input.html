@@ -180,7 +180,12 @@ function renderTable(data){
                     BPJS 4%: ${row["BPJS 4%"] || 0} |
                     BPJS 1%: ${row["BPJS 1%"] || 0} |
                     JKK: ${row.JKK || 0} |
-                    JKM: ${row.JKM || 0}
+                    JKM: ${row.JKM || 0}<br>
+                    JHT 3.7%: ${row["JHT 3.7%"] || 0} |
+                    JHT 2%: ${row["JHT 2%"] || 0}<br>
+                    JP 2%: ${row["JP 2%"] || 0} |
+                    JP 1%: ${row["JP 1%"] || 0}<br>
+                    Potongan: ${row.Potongan || 0}
                 </div>
             </td>
         </tr>
@@ -209,7 +214,16 @@ function formatData(){
         gaji_pokok: Number(r["Gaji Pokok"]) || 0,
         tunjangan: Number(r.Tunjangan) || 0,
         realisasi: Number(r["Realisasi Gaji"]) || 0,
-        masa_terakhir: r["Masa Terakhir"] || r.Periode || ''
+        masa_terakhir: r["Masa Terakhir"] || r.Periode || '',
+        bpjs4: Number(r["BPJS 4%"]) || 0,
+        bpjs1: Number(r["BPJS 1%"]) || 0,
+        jkk: Number(r.JKK) || 0,
+        jkm: Number(r.JKM) || 0,
+        jht37: Number(r["JHT 3.7%"]) || 0,
+        jht2: Number(r["JHT 2%"]) || 0,
+        jp2: Number(r["JP 2%"]) || 0,
+        jp1: Number(r["JP 1%"]) || 0,
+        potongan: Number(r.Potongan) || 0
     }));
 }
 
@@ -236,7 +250,16 @@ async function loadAllPayrollData(){
         "Gaji Pokok": r.gaji_pokok,
         Tunjangan: r.tunjangan,
         "Realisasi Gaji": r.realisasi,
-        "Masa Terakhir": r.masa_terakhir
+        "Masa Terakhir": r.masa_terakhir,
+        "BPJS 4%": r.bpjs4,
+        "BPJS 1%": r.bpjs1,
+        JKK: r.jkk,
+        JKM: r.jkm,
+        "JHT 3.7%": r.jht37,
+        "JHT 2%": r.jht2,
+        "JP 2%": r.jp2,
+        "JP 1%": r.jp1,
+        Potongan: r.potongan
     }));
 
     renderTable(payrollData);
@@ -319,7 +342,7 @@ async function replaceByPeriod(){
     }
 }
 
-/* ================= AUTO LOAD SAAT HALAMAN DIBUKA ================= */
+/* ================= AUTO LOAD ================= */
 window.onload = function(){
     loadAllPayrollData();
 }
