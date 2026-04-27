@@ -209,7 +209,7 @@ async function generateTaxEngine(){
       const gapok = Number(row.gapok||0);
       const tunjangan = Number(row.tunjangan||0);
       const premi = Number(row.jkk||0)+Number(row.jkm||0)+Number(row.bpjs4||0);
-      const irregular = Number(row.irregular_income||0);
+      const irregular = Number(row.irregular||0);
       const iuran = Number(row.jht2||0)+Number(row.jp1||0);
 
       const brutoBulan = gapok+tunjangan+premi+irregular;
