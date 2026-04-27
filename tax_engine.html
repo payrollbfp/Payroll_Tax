@@ -13,7 +13,7 @@ body{
   margin:0;
 }
 
-/* ===== TOP NAVBAR ===== */
+/* ===== NAVBAR ===== */
 .topbar{
   background:#1e293b;
   color:#fff;
@@ -35,12 +35,14 @@ body{
   cursor:pointer;
 }
 
-/* ===== CONTAINER ===== */
+/* ===== WRAPPER ===== */
 .wrapper{
   padding:20px;
 }
+
+/* ===== CONTAINER ===== */
 .container{
-  width:100%;
+  max-width:100%;
   margin:auto;
   background:#fff;
   padding:20px;
@@ -108,9 +110,9 @@ th:nth-child(3){
 
 <body>
 
-<!-- NAVBAR BARU -->
+<!-- NAVBAR -->
 <div class="topbar">
-  <h1>Tax Engine</h1>
+  <h1>Payroll System</h1>
   <button onclick="history.back()">Back</button>
 </div>
 
@@ -171,12 +173,104 @@ function getTERCategory(status){
 
 function getTERPercent(bruto,status){
   const category = getTERCategory(status);
-  const TER_TABLE = { A:[], B:[], C:[] }; // (dipersingkat karena tidak diubah)
+  const TER_TABLE = {
+    A:[[0,5400000,0],[5400001,5650000,0.0025],[5650001,5950000,0.005],[5950001,6300000,0.0075],[6300001,6750000,0.01],[6750001,7500000,0.0125],[7500001,8550000,0.015],[8550001,9650000,0.0175],[9650001,10050000,0.02],[10050001,10350000,0.0225],[10350001,10700000,0.025],[10700001,11050000,0.03],[11050001,11600000,0.035],[11600001,12500000,0.04],[12500001,13750000,0.05],[13750001,15100000,0.06],[15100001,16950000,0.07],[16950001,19750000,0.08],[19750001,24150000,0.09],[24150001,26450000,0.10],[26450001,28000000,0.11],[28000001,30000000,0.12],[30000001,Infinity,0.13]],
+    B:[[0,6200000,0],[6200001,6500000,0.0025],[6500001,6850000,0.005],[6850001,7300000,0.0075],[7300001,9200000,0.01],[9200001,10750000,0.015],[10750001,11250000,0.02],[11250001,11600000,0.025],[11600001,12600000,0.03],[12600001,13600000,0.04],[13600001,14950000,0.05],[14950001,16400000,0.06],[16400001,18450000,0.07],[18450001,21850000,0.08],[21850001,26000000,0.09],[26000001,27700000,0.10],[27700001,29350000,0.11],[29350001,30000000,0.12],[30000001,Infinity,0.13]],
+    C:[[0,6600000,0],[6600001,6950000,0.0025],[6950001,7350000,0.005],[7350001,7800000,0.0075],[7800001,8850000,0.01],[8850001,9800000,0.015],[9800001,10950000,0.02],[10950001,11200000,0.025],[11200001,12050000,0.03],[12050001,12950000,0.04],[12950001,14150000,0.05],[14150001,15550000,0.06],[15550001,17050000,0.07],[17050001,19500000,0.08],[19500001,22700000,0.09],[22700001,26600000,0.10],[26600001,28100000,0.11],[28100001,30000000,0.12],[30000001,Infinity,0.13]]
+  };
+  for(const [min,max,rate] of TER_TABLE[category]) if(bruto>=min && bruto<=max) return rate;
   return 0;
 }
 
-async function generateTaxEngine(){ /* TIDAK DIUBAH */ }
-async function loadTaxEngine(){ /* TIDAK DIUBAH */ }
+async function generateTaxEngine(){
+  const {data: payrollData,error: payrollError}=await supabaseClient.from('payroll').select('*').order('nik').order('periode');
+  if(payrollError) return alert(payrollError.message);
+
+  const {data: masterData,error: masterError}=await supabaseClient.from('master_payroll').select('nik,nama,project,status_pajak');
+  if(masterError) return alert(masterError.message);
+
+  const masterMap = {};
+  masterData.forEach(x=>masterMap[x.nik]=x);
+
+  const grouped = {};
+  payrollData.forEach(r=>{ if(!grouped[r.nik]) grouped[r.nik]=[]; grouped[r.nik].push(r); });
+
+  const results = [];
+
+  for(const nik in grouped){
+    const rows = grouped[nik];
+    const master = masterMap[nik] || {};
+    let akumulasiBruto = 0;
+    let akumulasiIuran = 0;
+    let totalTERSebelumnya = 0;
+
+    for(let i=0;i<rows.length;i++){
+      const row = rows[i];
+      const gapok = Number(row.gapok||0);
+      const tunjangan = Number(row.tunjangan||0);
+      const premi = Number(row.jkk||0)+Number(row.jkm||0)+Number(row.bpjs4||0);
+      const irregular = Number(row.irregular_income||0);
+      const iuran = Number(row.jht2||0)+Number(row.jp1||0);
+
+      const brutoBulan = gapok+tunjangan+premi+irregular;
+      akumulasiBruto += brutoBulan;
+      akumulasiIuran += iuran;
+
+      const biayaJabatan = Math.min((i+1)*500000,6000000);
+      const jumlahNeto = akumulasiBruto - biayaJabatan - akumulasiIuran;
+      const ptkp = PTKP_MAP[master.status_pajak] || 54000000;
+      const pkp = Math.max(0, jumlahNeto-ptkp);
+
+      const terRate = row.periode<12 ? getTERPercent(brutoBulan,master.status_pajak) : 0;
+      const pphTer = row.periode<12 ? Math.round(brutoBulan*terRate) : 0;
+
+      const pajakKumulatif = getProgressivePPh21Annual(pkp);
+      const pphFinal = Math.max(0, pajakKumulatif-totalTERSebelumnya);
+      const selisihPajak = pphFinal-pphTer;
+
+      let keterangan = 'Nihil';
+      if(selisihPajak<0) keterangan='Lebih Potong';
+      else if(selisihPajak>0) keterangan='Kurang Potong';
+
+      results.push({
+        periode: row.periode, nik, nama: master.nama||'', project: master.project||'', gapok,
+        tunjangan, premi_asuransi: premi, irregular,
+        bruto_bulan: brutoBulan, akumulasi_bruto: akumulasiBruto,
+        akumulasi_biaya_jabatan: biayaJabatan,
+        iuran_pensiun_jht: akumulasiIuran,
+        jumlah_neto: jumlahNeto, ptkp, pkp,
+        pph_ter: pphTer, pph_21_final: pphFinal,
+        selisih_pajak: selisihPajak, keterangan
+      });
+
+      if(row.periode<12) totalTERSebelumnya += pphTer;
+    }
+  }
+
+  const {error: saveError}=await supabaseClient.from('tax_engine').upsert(results,{onConflict:'nik,periode'});
+  if(saveError) return alert(saveError.message);
+
+  alert('Generate Tax berhasil');
+  loadTaxEngine();
+}
+
+async function loadTaxEngine(){
+  const {data,error}=await supabaseClient.from('tax_engine').select('*').order('nik').order('periode');
+  if(error) return alert(error.message);
+
+  const tbody = document.getElementById('taxTableBody');
+  tbody.innerHTML = data.map(r=>`
+    <tr>
+      <td>${r.nik}</td><td>${r.nama}</td><td>${r.project}</td>
+      <td>${formatRp(r.gapok)}</td><td>${formatRp(r.tunjangan)}</td><td>${formatRp(r.premi_asuransi)}</td>
+      <td>${formatRp(r.irregular)}</td><td>${formatRp(r.bruto_bulan)}</td><td>${formatRp(r.akumulasi_bruto)}</td>
+      <td>${formatRp(r.akumulasi_biaya_jabatan)}</td><td>${formatRp(r.iuran_pensiun_jht)}</td><td>${formatRp(r.jumlah_neto)}</td>
+      <td>${formatRp(r.ptkp)}</td><td>${formatRp(r.pkp)}</td><td>${formatRp(r.pph_ter)}</td>
+      <td>${formatRp(r.pph_21_final)}</td><td>${formatRp(r.selisih_pajak)}</td><td>${r.keterangan}</td>
+    </tr>
+  `).join('');
+}
+
 function saveTaxEngine(){ alert('Data sudah otomatis tersimpan saat Generate Tax'); }
 window.onload = loadTaxEngine;
 </script>
