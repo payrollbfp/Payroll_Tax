@@ -30,7 +30,7 @@ td:first-child,td:nth-child(2),td:nth-child(3),th:first-child,th:nth-child(2),th
     <table>
       <thead>
         <tr>
-          <th>NIK</th><th>Nama</th><th>Project</th><th>Gapok</th><th>Tunjangan</th><th>Premi Asuransi</th><th>THR</th>
+          <th>NIK</th><th>Nama</th><th>Project</th><th>Gapok</th><th>Tunjangan</th><th>Premi Asuransi</th><th>Irregular</th>
           <th>Penghasilan Bruto Bulan</th><th>Akumulasi Penghasilan Bruto</th><th>Akumulasi Biaya Jabatan</th>
           <th>Iuran Pensiun/JHT</th><th>Jumlah Neto</th><th>PTKP</th><th>PKP</th><th>PPH TER</th>
           <th>PPH 21 FINAL</th><th>Selisih Pajak</th><th>Keterangan</th>
@@ -126,12 +126,11 @@ async function generateTaxEngine(){
       const row = rows[i];
       const gapok = Number(row.gapok||0);
       const tunjangan = Number(row.tunjangan||0);
-      const premi = Number(row.jkk||0)+Number(row.jkm||0)+Number(row.bpjs_kes_4||0);
-      const thr = Number(row.thr||0);
+      const premi = Number(row.jkk||0)+Number(row.jkm||0)+Number(row.bpjs4||0);
       const irregular = Number(row.irregular_income||0);
-      const iuran = Number(row.jht_2||0)+Number(row.jp_1||0);
+      const iuran = Number(row.jht2||0)+Number(row.jp1||0);
 
-      const brutoBulan = gapok+tunjangan+premi+thr+irregular;
+      const brutoBulan = gapok+tunjangan+premi+irregular;
       akumulasiBruto += brutoBulan;
       akumulasiIuran += iuran;
 
@@ -153,7 +152,7 @@ async function generateTaxEngine(){
 
       results.push({
         periode: row.periode, nik, nama: master.nama||'', project: master.project||'', gapok,
-        tunjangan, premi_asuransi: premi, thr,
+        tunjangan, premi_asuransi: premi, irregular,
         bruto_bulan: brutoBulan, akumulasi_bruto: akumulasiBruto,
         akumulasi_biaya_jabatan: biayaJabatan,
         iuran_pensiun_jht: akumulasiIuran,
@@ -182,7 +181,7 @@ async function loadTaxEngine(){
     <tr>
       <td>${r.nik}</td><td>${r.nama}</td><td>${r.project}</td>
       <td>${formatRp(r.gapok)}</td><td>${formatRp(r.tunjangan)}</td><td>${formatRp(r.premi_asuransi)}</td>
-      <td>${formatRp(r.thr)}</td><td>${formatRp(r.bruto_bulan)}</td><td>${formatRp(r.akumulasi_bruto)}</td>
+      <td>${formatRp(r.irregular)}</td><td>${formatRp(r.bruto_bulan)}</td><td>${formatRp(r.akumulasi_bruto)}</td>
       <td>${formatRp(r.akumulasi_biaya_jabatan)}</td><td>${formatRp(r.iuran_pensiun_jht)}</td><td>${formatRp(r.jumlah_neto)}</td>
       <td>${formatRp(r.ptkp)}</td><td>${formatRp(r.pkp)}</td><td>${formatRp(r.pph_ter)}</td>
       <td>${formatRp(r.pph_21_final)}</td><td>${formatRp(r.selisih_pajak)}</td><td>${r.keterangan}</td>
