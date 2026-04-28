@@ -52,7 +52,14 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let uploadData = [];
+function cleanString(value){
+    if(!value) return null;
 
+    return String(value)
+        .replace(/[\u0000-\u001F\u007F]/g, '') // hapus karakter aneh
+        .replace(/"/g, '') // hapus kutip
+        .trim();
+}
 /* NORMALIZE STATUS */
 function normalizeStatusPajak(status){
     return String(status || '')
