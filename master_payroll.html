@@ -3,153 +3,58 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Master Payroll Karyawan</title>
+<title>Upload Payroll Lengkap</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <style>
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Segoe UI,sans-serif;
-}
-body{
-    min-height:100vh;
-    background:#eef2f7;
-}
-.header{
-    background:#1e293b;
-    color:white;
-    padding:18px 25px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-}
-.back-btn{
-    padding:10px 16px;
-    border:none;
-    border-radius:6px;
-    background:#64748b;
-    color:white;
-    cursor:pointer;
-    font-weight:bold;
-}
-.container{
-    padding:20px;
-}
-.card{
-    background:white;
-    padding:20px;
-    border-radius:12px;
-    box-shadow:0 4px 12px rgba(0,0,0,0.08);
-}
-.upload-box,.search-box{
-    display:flex;
-    gap:10px;
-    margin-bottom:20px;
-    flex-wrap:wrap;
-}
-button{
-    padding:10px 16px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-    font-weight:bold;
-}
-.btn-preview{ background:#3b82f6; color:white; }
-.btn-save{ background:#10b981; color:white; }
-.btn-replace{ background:#f59e0b; color:white; }
-.btn-search{ background:#334155; color:white; }
-
-table{
-    width:100%;
-    border-collapse:collapse;
-}
-th,td{
-    padding:10px;
-    border:1px solid #ddd;
-    font-size:13px;
-}
-th{
-    background:#334155;
-    color:white;
-}
-.pagination{
-    margin-top:20px;
-    display:flex;
-    gap:8px;
-    justify-content:center;
-}
-.active-page{
-    background:#1e293b;
-    color:white;
-}
-.loading{
-    margin-top:10px;
-    color:#3b82f6;
-    display:none;
-}
+body{font-family:Segoe UI;background:#eef2f7;padding:20px;}
+button{padding:10px 14px;margin:5px;border:none;border-radius:6px;cursor:pointer;}
+.btn-preview{background:#3b82f6;color:white;}
+.btn-save{background:#10b981;color:white;}
+table{width:100%;border-collapse:collapse;margin-top:20px;}
+th,td{border:1px solid #ddd;padding:8px;font-size:12px;}
+th{background:#334155;color:white;}
 </style>
 </head>
+
 <body>
 
-<div class="header">
-    <h2>Master Payroll Karyawan</h2>
-    <button class="back-btn" onclick="window.location.href='dashboard.html'">Back</button>
-</div>
+<h2>Upload Master Payroll (Lengkap)</h2>
 
-<div class="container">
-<div class="card">
+<input type="file" id="fileInput"><br>
+<button class="btn-preview" onclick="previewFile()">Preview</button>
+<button class="btn-save" onclick="saveData()">Save</button>
 
-<div class="upload-box">
-    <input type="file" id="fileInput">
-    <button class="btn-preview" onclick="previewFile()">Preview</button>
-    <button class="btn-save" onclick="saveData()">Save</button>
-    <button class="btn-replace" onclick="replaceData()">Replace</button>
-</div>
-
-<div class="search-box">
-    <input type="text" id="searchNama" placeholder="Cari Nama..." style="padding:10px; width:250px;">
-    <button class="btn-search" onclick="searchPayroll()">Search</button>
-</div>
-
-<p id="loading" class="loading">⏳ Processing...</p>
+<p id="loading" style="display:none;color:blue;">⏳ Processing...</p>
 
 <table>
 <thead>
 <tr>
-    <th>Nopeg</th>
-    <th>NIK</th>
-    <th>NPWP</th>
-    <th>Nama</th>
-    <th>Jenis Kelamin</th>
-    <th>Alamat</th>
-    <th>Status Pajak</th>
-    <th>TMT</th>
-    <th>Project</th>
+<th>Nopeg</th>
+<th>NIK</th>
+<th>NPWP</th>
+<th>Nama</th>
+<th>JK</th>
+<th>Alamat</th>
+<th>Status Pajak</th>
+<th>TMT</th>
+<th>Project</th>
 </tr>
 </thead>
-<tbody id="payrollTable"></tbody>
+<tbody id="table"></tbody>
 </table>
-
-<div class="pagination" id="pagination"></div>
-
-</div>
-</div>
 
 <script>
 const SUPABASE_URL = "https://nwrbjbwjmkahjuuyizfq.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmJqYndqbWthaGp1dXlpemZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MjM4OTIsImV4cCI6MjA5MjQ5OTg5Mn0.n67pONlkoMqZguyoTwQQFJ0VBRfPaIVuVlPGxsajaGA";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let payrollData = [];
-let filteredData = [];
 let uploadData = [];
-let currentPage = 1;
-const rowsPerPage = 20;
-    function normalizeStatusPajak(status){
+
+/* NORMALIZE */
+function normalizeStatusPajak(status){
     return String(status || '')
         .trim()
         .toUpperCase()
@@ -164,189 +69,108 @@ const rowsPerPage = 20;
         .replace('K3','K/3');
 }
 
-/* ================= LOAD DATA ================= */
-async function loadPayroll(){
-    loading(true);
+/* FORMAT DATE */
+function formatDate(value){
+    if(!value) return null;
 
-    const { data, error } = await supabaseClient
-        .from("master_payroll")
-        .select("*")
-        .order("nama");
-
-    loading(false);
-
-    if(error){
-        console.error(error);
-        alert("Gagal load data");
-        return;
+    if(typeof value === 'number'){
+        const date = new Date((value-25569)*86400*1000);
+        return date.toISOString().split('T')[0];
     }
 
-    payrollData = data || [];
-    filteredData = payrollData;
-    renderTable();
-    renderPagination();
+    const d = new Date(value);
+    if(isNaN(d)) return null;
+
+    return d.toISOString().split('T')[0];
 }
 
-/* ================= PREVIEW FILE ================= */
+/* PREVIEW */
 function previewFile(){
     const file = document.getElementById("fileInput").files[0];
     if(!file) return alert("Pilih file Excel");
 
     const reader = new FileReader();
+
     reader.onload = function(e){
         const workbook = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const raw = XLSX.utils.sheet_to_json(sheet);
 
-        if(raw.length===0){
-            alert("File kosong");
-            return;
-        }
-
         uploadData = raw.map(row => ({
-            nopeg: row.Nopeg || row.NOPEG || '',
-            nik: row.NIK || '',
-            npwp: row.NPWP || '',
-            nama: row.Nama || row.NAMA || '',
-            jenis_kelamin: row["Jenis Kelamin"] || row["JENIS KELAMIN"] || '',
-            alamat: row.Alamat || row.ALAMAT || '',
-            status_pajak: normalizeStatusPajak(row["Status Pajak"] || row["STATUS PAJAK"] || ''),
-            tmt: row.TMT || '',
-            project: row.Project || row.PROJECT || ''
+            nopeg: row.Nopeg || row.NOPEG || null,
+            nik: row.NIK || null,
+            npwp: row.NPWP || null,
+            nama: row.Nama || row.NAMA || null,
+            jenis_kelamin: row["Jenis Kelamin"] || row["JENIS KELAMIN"] || null,
+            alamat: row.Alamat || row.ALAMAT || null,
+            status_pajak: normalizeStatusPajak(row["Status Pajak"] || ''),
+            tmt: formatDate(row.TMT),
+            project: row.Project || row.PROJECT || null
         }));
 
-        payrollData = uploadData;
-        filteredData = uploadData;
-        currentPage = 1;
+        console.log("DATA:", uploadData);
         renderTable();
-        renderPagination();
     };
+
     reader.readAsArrayBuffer(file);
 }
 
-/* ================= SAVE ================= */
+/* SAVE */
 async function saveData(){
-    if(uploadData.length===0) return alert("Tidak ada data upload");
+    if(uploadData.length === 0){
+        alert("Tidak ada data");
+        return;
+    }
 
     loading(true);
 
-    const { error } = await supabaseClient
-        .from("master_payroll")
-        .insert(uploadData);
+    const chunkSize = 100;
+
+    for(let i=0;i<uploadData.length;i+=chunkSize){
+        const chunk = uploadData.slice(i,i+chunkSize);
+
+        const { error } = await supabaseClient
+            .from("master_payroll")
+            .insert(chunk);
+
+        if(error){
+            console.error(error);
+            alert("Error: " + error.message);
+            loading(false);
+            return;
+        }
+    }
 
     loading(false);
-
-    if(error){
-        console.error(error);
-        alert("Gagal simpan data");
-    }else{
-        alert("Berhasil simpan data");
-        loadPayroll();
-    }
+    alert("Berhasil simpan semua data!");
 }
 
-/* ================= REPLACE ================= */
-async function replaceData(){
-    if(uploadData.length===0) return alert("Tidak ada data upload");
-    if(!confirm("Replace semua data master payroll?")) return;
-
-    loading(true);
-
-    await supabaseClient
-        .from("master_payroll")
-        .delete()
-        .neq("id",0);
-
-    const { error } = await supabaseClient
-        .from("master_payroll")
-        .insert(uploadData);
-
-    loading(false);
-
-    if(error){
-        console.error(error);
-        alert("Gagal replace data");
-    }else{
-        alert("Replace berhasil");
-        loadPayroll();
-    }
-}
-
-/* ================= RENDER ================= */
+/* RENDER */
 function renderTable(){
-    const start = (currentPage-1)*rowsPerPage;
-    const pageData = filteredData.slice(start,start+rowsPerPage);
-
     let html = "";
 
-    pageData.forEach(item=>{
+    uploadData.forEach(d=>{
         html += `
         <tr>
-            <td>${item.nopeg||''}</td>
-            <td>${item.nik||''}</td>
-            <td>${item.npwp||''}</td>
-            <td>${item.nama||''}</td>
-            <td>${item.jenis_kelamin||''}</td>
-            <td>${item.alamat||''}</td>
-            <td>${item.status_pajak||''}</td>
-            <td>${formatTanggal(item.tmt)}</td>
-            <td>${item.project||''}</td>
+            <td>${d.nopeg||''}</td>
+            <td>${d.nik||''}</td>
+            <td>${d.npwp||''}</td>
+            <td>${d.nama||''}</td>
+            <td>${d.jenis_kelamin||''}</td>
+            <td>${d.alamat||''}</td>
+            <td>${d.status_pajak||''}</td>
+            <td>${d.tmt||''}</td>
+            <td>${d.project||''}</td>
         </tr>`;
     });
 
-    document.getElementById("payrollTable").innerHTML = html;
+    document.getElementById("table").innerHTML = html;
 }
 
-/* ================= SEARCH ================= */
-function searchPayroll(){
-    const key = document.getElementById("searchNama").value.toLowerCase();
-    filteredData = payrollData.filter(x =>
-        (x.nama||'').toLowerCase().includes(key)
-    );
-    currentPage = 1;
-    renderTable();
-    renderPagination();
+/* LOADING */
+function loading(x){
+    document.getElementById("loading").style.display = x ? "block":"none";
 }
-
-/* ================= PAGINATION ================= */
-function renderPagination(){
-    const totalPages = Math.ceil(filteredData.length/rowsPerPage);
-    let html = "";
-
-    for(let i=1;i<=totalPages;i++){
-        html += `<button class="${i===currentPage?'active-page':''}" onclick="changePage(${i})">${i}</button>`;
-    }
-
-    document.getElementById("pagination").innerHTML = html;
-}
-
-function changePage(page){
-    currentPage = page;
-    renderTable();
-    renderPagination();
-}
-
-/* ================= FORMAT TANGGAL ================= */
-function formatTanggal(value){
-    if(!value) return '';
-
-    if(typeof value === 'number'){
-        const date = new Date((value-25569)*86400*1000);
-        return date.toLocaleDateString('id-ID');
-    }
-
-    const date = new Date(value);
-    if(isNaN(date)) return value;
-
-    return date.toLocaleDateString('id-ID');
-}
-
-/* ================= LOADING ================= */
-function loading(show){
-    document.getElementById("loading").style.display = show ? "block":"none";
-}
-
-window.onload = loadPayroll;
 </script>
 
 </body>
