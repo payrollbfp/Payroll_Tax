@@ -149,8 +149,7 @@ async function loadPayroll(){
 
     const { data, error } = await supabaseClient
         .from("master_payroll")
-        .select("*")
-        .order("nama", { ascending: true });
+        .select("*"); // ❌ HAPUS .order()
 
     if(error){
         console.error("LOAD ERROR:", error);
@@ -159,6 +158,10 @@ async function loadPayroll(){
     }
 
     console.log("DATA DB:", data);
+
+    if(!data || data.length === 0){
+        alert("⚠️ Data kosong (cek database / RLS)");
+    }
 
     renderTable(data || []);
 }
