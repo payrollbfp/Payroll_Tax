@@ -3,31 +3,62 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Upload Payroll Fix Final</title>
+<title>Master Payroll Karyawan</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <style>
-body{font-family:Segoe UI;background:#eef2f7;padding:20px;}
-button{padding:10px 14px;margin:5px;border:none;border-radius:6px;cursor:pointer;}
-.btn-preview{background:#3b82f6;color:white;}
-.btn-save{background:#10b981;color:white;}
-table{width:100%;border-collapse:collapse;margin-top:20px;}
-th,td{border:1px solid #ddd;padding:8px;font-size:12px;}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,sans-serif;}
+body{background:#eef2f7;}
+.header{
+    background:#1e293b;color:white;
+    padding:18px 25px;
+    display:flex;justify-content:space-between;align-items:center;
+}
+.back-btn{
+    padding:10px 16px;border:none;border-radius:6px;
+    background:#64748b;color:white;cursor:pointer;font-weight:bold;
+}
+.container{padding:20px;}
+.card{
+    background:white;padding:20px;border-radius:12px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+.upload-box{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+button{
+    padding:10px 16px;border:none;border-radius:6px;
+    cursor:pointer;font-weight:bold;
+}
+.btn-preview{ background:#3b82f6; color:white; }
+.btn-save{ background:#10b981; color:white; }
+.btn-replace{ background:#f59e0b; color:white; }
+
+table{width:100%;border-collapse:collapse;}
+th,td{padding:10px;border:1px solid #ddd;font-size:13px;}
 th{background:#334155;color:white;}
+
+.loading{margin-top:10px;color:#3b82f6;display:none;}
 </style>
 </head>
 
 <body>
 
-<h2>Upload Master Payroll (FINAL FIX)</h2>
+<div class="header">
+    <h2>Master Payroll Karyawan</h2>
+    <button class="back-btn" onclick="window.location.href='dashboard.html'">Back</button>
+</div>
 
-<input type="file" id="fileInput"><br>
-<button class="btn-preview" onclick="previewFile()">Preview</button>
-<button class="btn-save" onclick="saveData()">Save</button>
+<div class="container">
+<div class="card">
 
-<p id="loading" style="display:none;color:blue;">⏳ Processing...</p>
+<div class="upload-box">
+    <input type="file" id="fileInput">
+    <button class="btn-preview" onclick="previewFile()">Preview</button>
+    <button class="btn-save" onclick="saveData()">Save</button>
+</div>
+
+<p id="loading" class="loading">⏳ Processing...</p>
 
 <table>
 <thead>
@@ -36,7 +67,7 @@ th{background:#334155;color:white;}
 <th>NIK</th>
 <th>NPWP</th>
 <th>Nama</th>
-<th>JK</th>
+<th>Jenis Kelamin</th>
 <th>Alamat</th>
 <th>Status Pajak</th>
 <th>TMT</th>
@@ -46,25 +77,29 @@ th{background:#334155;color:white;}
 <tbody id="table"></tbody>
 </table>
 
+</div>
+</div>
+
 <script>
 const SUPABASE_URL = "https://nwrbjbwjmkahjuuyizfq.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmJqYndqbWthaGp1dXlpemZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MjM4OTIsImV4cCI6MjA5MjQ5OTg5Mn0.n67pONlkoMqZguyoTwQQFJ0VBRfPaIVuVlPGxsajaGA";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let uploadData = [];
+
+/* CLEAN STRING */
 function cleanString(value){
     if(!value) return null;
-
     return String(value)
-        .replace(/[\u0000-\u001F\u007F]/g, '') // hapus karakter aneh
-        .replace(/"/g, '') // hapus kutip
+        .replace(/[\u0000-\u001F\u007F]/g, '')
+        .replace(/"/g, '')
         .trim();
 }
-/* NORMALIZE STATUS */
+
+/* NORMALIZE */
 function normalizeStatusPajak(status){
     return String(status || '')
-        .trim()
-        .toUpperCase()
+        .trim().toUpperCase()
         .replace(/\s+/g,'')
         .replace('TK0','TK/0')
         .replace('TK1','TK/1')
@@ -76,25 +111,19 @@ function normalizeStatusPajak(status){
         .replace('K3','K/3');
 }
 
-/* FORMAT DATE SUPER AMAN */
+/* FORMAT DATE */
 function formatDate(value){
     if(!value) return null;
 
-    // sudah format YYYY-MM-DD
     if(typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)){
         return value;
     }
 
-    // format 1/1/2026
     if(typeof value === "string" && value.includes("/")){
-        const parts = value.split("/");
-        if(parts.length === 3){
-            const [d,m,y] = parts;
-            return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
-        }
+        const [d,m,y] = value.split("/");
+        return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
     }
 
-    // excel number
     if(typeof value === "number"){
         const date = new Date((value-25569)*86400*1000);
         return date.toISOString().split('T')[0];
@@ -116,23 +145,19 @@ function previewFile(){
     reader.onload = function(e){
         const workbook = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
-
-        // 🔥 FIX UTAMA
-        const raw = XLSX.utils.sheet_to_json(sheet, { raw:false });
+        const raw = XLSX.utils.sheet_to_json(sheet, {raw:false});
 
         uploadData = raw.map(row => ({
-            nopeg: row.Nopeg || row.NOPEG || null,
-            nik: row.NIK || null,
-            npwp: row.NPWP || null,
-            nama: row.Nama || row.NAMA || null,
-            jenis_kelamin: row["Jenis Kelamin"] || row["JENIS KELAMIN"] || null,
-            alamat: row.Alamat || row.ALAMAT || null,
+            nopeg: cleanString(row.Nopeg || row.NOPEG),
+            nik: cleanString(row.NIK),
+            npwp: cleanString(row.NPWP),
+            nama: cleanString(row.Nama || row.NAMA),
+            jenis_kelamin: cleanString(row["Jenis Kelamin"] || row["JENIS KELAMIN"]),
+            alamat: cleanString(row.Alamat || row.ALAMAT),
             status_pajak: normalizeStatusPajak(row["Status Pajak"] || ''),
             tmt: formatDate(row.TMT),
-            project: row.Project || row.PROJECT || null
+            project: cleanString(row.Project || row.PROJECT)
         }));
-
-        console.log("FINAL DATA:", uploadData);
 
         renderTable();
     };
@@ -159,7 +184,7 @@ async function saveData(){
             .insert(chunk);
 
         if(error){
-            console.error("ERROR DETAIL:", error);
+            console.error(error);
             alert("Gagal: " + error.message);
             loading(false);
             return;
@@ -167,7 +192,7 @@ async function saveData(){
     }
 
     loading(false);
-    alert("✅ Semua data berhasil disimpan!");
+    alert("✅ Data berhasil disimpan!");
 }
 
 /* RENDER */
