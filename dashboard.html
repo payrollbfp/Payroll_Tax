@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +10,7 @@
     margin:0;
     padding:0;
     box-sizing:border-box;
-    font-family:Californian FB,sans-serif;
+    font-family:Segoe UI,sans-serif;
 }
 
 body{
@@ -29,7 +29,7 @@ body{
 }
 
 .header h1{
-    font-size:28px;
+    font-size:26px;
 }
 
 .logout-btn{
@@ -41,15 +41,10 @@ body{
     cursor:pointer;
     font-weight:bold;
 }
-
-.logout-btn:hover{
-    background:#c0392b;
-}
+.logout-btn:hover{ background:#c0392b; }
 
 /* CONTENT */
-.container{
-    padding:30px;
-}
+.container{ padding:30px; }
 
 .dashboard-grid{
     display:grid;
@@ -60,17 +55,17 @@ body{
 /* CARD */
 .card{
     background:white;
-    border-radius:8px;
+    border-radius:10px;
     padding:25px;
     box-shadow:0 2px 8px rgba(0,0,0,0.08);
     cursor:pointer;
-    transition:0.3s;
+    transition:0.25s;
     border-top:4px solid #2c3e50;
 }
 
 .card:hover{
-    transform:translateY(-3px);
-    box-shadow:0 4px 12px rgba(0,0,0,0.12);
+    transform:translateY(-4px);
+    box-shadow:0 6px 16px rgba(0,0,0,0.15);
 }
 
 .icon{
@@ -80,16 +75,17 @@ body{
 
 .card h2{
     font-size:18px;
-    margin-bottom:8px;
+    margin-bottom:6px;
     color:#2c3e50;
 }
 
 .card p{
-    font-size:14px;
+    font-size:13px;
     color:#666;
 }
 </style>
 </head>
+
 <body>
 
 <div class="header">
@@ -100,28 +96,29 @@ body{
 <div class="container">
     <div class="dashboard-grid">
 
-        <div class="card" onclick="openMenu('master')">
+        <div class="card" onclick="go('master_payroll.html')">
             <div class="icon">👥</div>
             <h2>Master Database Pajak</h2>
-            <p>Kelola Database Pajak karyawan</p>
+            <p>Kelola database pajak karyawan</p>
         </div>
 
-        <div class="card" onclick="openMenu('payroll')">
+        <div class="card" onclick="go('payroll_input.html')">
             <div class="icon">💰</div>
             <h2>Payroll Input</h2>
-            <p>Input Komponen Gaji</p>
+            <p>Input komponen gaji</p>
         </div>
 
-        <div class="card" onclick="openMenu('tax')">
+        <div class="card" onclick="go('tax_engine.html')">
             <div class="icon">🧾</div>
             <h2>Tax Engine</h2>
-            <p>Hitung PPh21</p>
+            <p>Perhitungan PPh21</p>
         </div>
 
-        <div class="card" onclick="openMenu('report')">
+        <!-- 🔥 REPORT TERHUBUNG -->
+        <div class="card" onclick="go('report.html')">
             <div class="icon">📊</div>
             <h2>Report</h2>
-            <p>Laporan payroll</p>
+            <p>Laporan PPh21 & Master Payroll</p>
         </div>
 
     </div>
@@ -132,23 +129,8 @@ function logout(){
     window.location.href = "index.html";
 }
 
-function openMenu(menu){
-    switch(menu){
-        case "master":
-            window.location.href = "master_payroll.html";
-            break;
-        case "payroll":
-           window.location.href = "payroll_input.html";
-            break;
-        case "tax":
-            window.location.href = "tax_engine.html";
-            break;
-        case "report":
-            window.location.href = "report.html";
-            break;
-        default:
-            alert("Menu tidak ditemukan");
-    }
+function go(page){
+    window.location.href = page;
 }
 </script>
 
