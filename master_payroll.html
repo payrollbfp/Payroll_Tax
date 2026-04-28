@@ -10,7 +10,6 @@
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,sans-serif;}
-
 body{background:#eef2f7;}
 
 .header{
@@ -30,7 +29,6 @@ body{background:#eef2f7;}
     color:white;
     cursor:pointer;
     font-weight:bold;
-    transition:0.2s;
 }
 .back-btn:hover{background:#334155;}
 
@@ -56,18 +54,19 @@ button{
     border-radius:6px;
     cursor:pointer;
     font-weight:bold;
-    transition:0.2s;
 }
 
-/* 🔥 tombol fix (tidak pucat) */
+/* tombol solid */
 .btn-preview{ background:#2563eb; color:white; }
 .btn-preview:hover{ background:#1d4ed8; }
 
 .btn-save{ background:#059669; color:white; }
 .btn-save:hover{ background:#047857; }
 
-.btn-replace{ background:#d97706; color:white; }
-.btn-replace:hover{ background:#b45309; }
+button:disabled{
+    opacity:0.5;
+    cursor:not-allowed;
+}
 
 table{
     width:100%;
@@ -105,8 +104,8 @@ th{
 
 <div class="upload-box">
     <input type="file" id="fileInput">
-    <button class="btn-preview" onclick="previewFile()">Preview</button>
-    <button class="btn-save" onclick="saveData()">Save</button>
+    <button id="btnPreview" class="btn-preview" onclick="previewFile()" disabled>Preview</button>
+    <button id="btnSave" class="btn-save" onclick="saveData()" disabled>Save</button>
 </div>
 
 <p id="loading" class="loading">⏳ Processing...</p>
@@ -138,20 +137,30 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let uploadData = [];
 
-/* ================= LOAD DATA (INI YANG KAMU BUTUH) ================= */
+/* AKTIFKAN TOMBOL SETELAH PILIH FILE */
+document.getElementById("fileInput").addEventListener("change", function(){
+    document.getElementById("btnPreview").disabled = false;
+    document.getElementById("btnSave").disabled = false;
+});
+
+/* LOAD DATA DARI DB */
 async function loadPayroll(){
+    console.log("LOAD DATA...");
+
     const { data, error } = await supabaseClient
         .from("master_payroll")
         .select("*")
-        .order("nama");
+        .order("nama", { ascending: true });
 
     if(error){
-        console.error(error);
-        alert("Gagal load data");
+        console.error("LOAD ERROR:", error);
+        alert("Gagal load data: " + error.message);
         return;
     }
 
-    renderTable(data);
+    console.log("DATA DB:", data);
+
+    renderTable(data || []);
 }
 
 /* CLEAN STRING */
@@ -261,7 +270,6 @@ async function saveData(){
     loading(false);
     alert("✅ Data berhasil disimpan!");
 
-    // reload dari database
     loadPayroll();
 }
 
@@ -292,7 +300,7 @@ function loading(x){
     document.getElementById("loading").style.display = x ? "block":"none";
 }
 
-/* 🔥 AUTO LOAD SAAT HALAMAN DIBUKA */
+/* AUTO LOAD */
 window.onload = loadPayroll;
 </script>
 
