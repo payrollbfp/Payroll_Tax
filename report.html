@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Report</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI;}
+body{background:#eef2f7;}
+
+.header{
+    background:#1e293b;
+    color:white;
+    padding:18px 25px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.container{padding:20px;}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom:20px;
+}
+
+.filter-box{
+    display:flex;
+    gap:10px;
+    margin-bottom:10px;
+    flex-wrap:wrap;
+}
+
+button{
+    padding:10px 16px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.btn{ background:#2563eb; color:white; }
+.btn:hover{ background:#1d4ed8; }
+
+.btn-export{ background:#059669; color:white; }
+.btn-export:hover{ background:#047857; }
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:10px;
+}
+
+th,td{
+    padding:10px;
+    border:1px solid #ddd;
+    font-size:13px;
+}
+
+th{
+    background:#334155;
+    color:white;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+    <h2>Dashboard Report</h2>
+    <button onclick="window.location.href='dashboard.html'">Back</button>
+</div>
+
+<div class="container">
+
+<!-- ================= PPH 21 ================= -->
+<div class="card">
+    <h3>Report PPH 21</h3>
+
+    <div class="filter-box">
+        <input type="month" id="periode">
+        <button class="btn" onclick="loadPPH()">Load</button>
+        <button class="btn-export" onclick="exportPPH()">Export Excel</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Periode</th>
+                <th>NIK</th>
+                <th>Nopeg</th>
+                <th>Nama</th>
+                <th>Project</th>
+                <th>Bruto Bulanan</th>
+                <th>Akumulasi Bruto</th>
+                <th>PPH TER</th>
+                <th>PPH 21 Final</th>
+                <th>Selisih</th>
+                <th>Keterangan</th>
+            </tr>
+        </thead>
+        <tbody id="pphTable"></tbody>
+    </table>
+</div>
+
+<!-- ================= MASTER ================= -->
+<div class="card">
+    <h3>Report Master Database Pajak</h3>
+
+    <div class="filter-box">
+        <button class="btn" onclick="loadMaster()">Load</button>
+        <button class="btn-export" onclick="exportMaster()">Export Excel</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nopeg</th>
+                <th>NIK</th>
+                <th>NPWP</th>
+                <th>Nama</th>
+                <th>Jenis Kelamin</th>
+                <th>Alamat</th>
+                <th>Status Pajak</th>
+                <th>TMT</th>
+                <th>Project</th>
+            </tr>
+        </thead>
+        <tbody id="masterTable"></tbody>
+    </table>
+</div>
+
+</div>
+
+<script>
+const SUPABASE_URL = "https://nwrbjbwjmkahjuuyizfq.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmJqYndqbWthaGp1dXlpemZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MjM4OTIsImV4cCI6MjA5MjQ5OTg5Mn0.n67pONlkoMqZguyoTwQQFJ0VBRfPaIVuVlPGxsajaGA";
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let pphData = [];
+let masterData = [];
+
+/* ================= LOAD PPH ================= */
+async function loadPPH(){
+    const periode = document.getElementById("periode").value;
+
+    let query = db.from("tax_engine").select("*");
+
+    if(periode){
+        query = query.eq("periode", periode);
+    }
+
+    const { data, error } = await query;
+
+    if(error){
+        alert(error.message);
+        return;
+    }
+
+    pphData = data || [];
+    renderPPH(pphData);
+}
+
+/* ================= LOAD MASTER ================= */
+async function loadMaster(){
+    const { data, error } = await db
+        .from("master_payroll")
+        .select("*");
+
+    if(error){
+        alert(error.message);
+        return;
+    }
+
+    masterData = data || [];
+    renderMaster(masterData);
+}
+
+/* ================= RENDER ================= */
+function renderPPH(data){
+    let html = "";
+    data.forEach(d=>{
+        html += `
+        <tr>
+            <td>${d.periode||''}</td>
+            <td>${d.nik||''}</td>
+            <td>${d.nopeg||''}</td>
+            <td>${d.nama||''}</td>
+            <td>${d.project||''}</td>
+            <td>${d.bruto_bulanan||''}</td>
+            <td>${d.akumulasi_bruto||''}</td>
+            <td>${d.pph_ter||''}</td>
+            <td>${d.pph21_final||''}</td>
+            <td>${d.selisih||''}</td>
+            <td>${d.keterangan||''}</td>
+        </tr>`;
+    });
+    document.getElementById("pphTable").innerHTML = html;
+}
+
+function renderMaster(data){
+    let html = "";
+    data.forEach(d=>{
+        html += `
+        <tr>
+            <td>${d.nopeg||''}</td>
+            <td>${d.nik||''}</td>
+            <td>${d.npwp||''}</td>
+            <td>${d.nama||''}</td>
+            <td>${d.jenis_kelamin||''}</td>
+            <td>${d.alamat||''}</td>
+            <td>${d.status_pajak||''}</td>
+            <td>${d.tmt||''}</td>
+            <td>${d.project||''}</td>
+        </tr>`;
+    });
+    document.getElementById("masterTable").innerHTML = html;
+}
+
+/* ================= EXPORT ================= */
+function exportPPH(){
+    if(pphData.length === 0){
+        alert("Tidak ada data");
+        return;
+    }
+
+    const ws = XLSX.utils.json_to_sheet(pphData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "PPH21");
+
+    XLSX.writeFile(wb, "report_pph21.xlsx");
+}
+
+function exportMaster(){
+    if(masterData.length === 0){
+        alert("Tidak ada data");
+        return;
+    }
+
+    const ws = XLSX.utils.json_to_sheet(masterData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Master");
+
+    XLSX.writeFile(wb, "master_payroll.xlsx");
+}
+</script>
+
+</body>
+</html>
