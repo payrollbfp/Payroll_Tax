@@ -181,7 +181,12 @@ function getTERPercent(bruto,status){
   for(const [min,max,rate] of TER_TABLE[category]) if(bruto>=min && bruto<=max) return rate;
   return 0;
 }
-
+function normalizeStatus(status){
+  return (status || "")
+    .toUpperCase()
+    .replace(/\s+/g,'')   // hapus semua spasi
+    .replace('-', '/');   // ubah K-1 jadi K/1
+}
 async function generateTaxEngine(){
   const {data: payrollData,error: payrollError}=await supabaseClient.from('payroll').select('*').order('nik').order('periode');
   if(payrollError) return alert(payrollError.message);
@@ -213,6 +218,19 @@ async function generateTaxEngine(){
       const iuran = Number(row.jht2||0)+Number(row.jp1||0);
 
       const brutoBulan = gapok+tunjangan+premi+irregular;
+      // ✅ DEBUG DI SINI
+  const statusRaw = master.status_pajak;
+  const statusClean = normalizeStatus(statusRaw);
+
+  console.log({
+    nama: master.nama,
+    nik: nik,
+    bruto: brutoBulan,
+    status_raw: statusRaw,
+    status_clean: statusClean,
+    kategori: getTERCategory(statusClean),
+    rate: getTERPercent(brutoBulan, statusClean)
+  });
       akumulasiBruto += brutoBulan;
       akumulasiIuran += iuran;
 
@@ -221,8 +239,10 @@ async function generateTaxEngine(){
       const ptkp = PTKP_MAP[master.status_pajak] || 54000000;
       const pkp = Math.max(0, jumlahNeto-ptkp);
 
-      const terRate = row.periode<12 ? getTERPercent(brutoBulan,master.status_pajak) : 0;
-      const pphTer = row.periode<12 ? Math.round(brutoBulan*terRate) : 0;
+      const status = normalizeStatus(master.status_pajak);
+
+const terRate = row.periode<12 ? getTERPercent(brutoBulan, status) : 0;
+const pphTer = row.periode<12 ? Math.round(brutoBulan * terRate) : 0;
 
       const pajakKumulatif = getProgressivePPh21Annual(pkp);
       const pphFinal = Math.max(0, pajakKumulatif-totalTERSebelumnya);
