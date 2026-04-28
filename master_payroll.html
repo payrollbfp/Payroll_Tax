@@ -9,9 +9,16 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,sans-serif;}
-body{background:#eef2f7;}
-
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Segoe UI,sans-serif;
+}
+body{
+    min-height:100vh;
+    background:#eef2f7;
+}
 .header{
     background:#1e293b;
     color:white;
@@ -20,34 +27,30 @@ body{background:#eef2f7;}
     justify-content:space-between;
     align-items:center;
 }
-
 .back-btn{
     padding:10px 16px;
     border:none;
     border-radius:6px;
-    background:#475569;
+    background:#64748b;
     color:white;
     cursor:pointer;
     font-weight:bold;
 }
-.back-btn:hover{background:#334155;}
-
-.container{padding:20px;}
-
+.container{
+    padding:20px;
+}
 .card{
     background:white;
     padding:20px;
     border-radius:12px;
     box-shadow:0 4px 12px rgba(0,0,0,0.08);
 }
-
-.upload-box{
+.upload-box,.search-box{
     display:flex;
     gap:10px;
     margin-bottom:20px;
     flex-wrap:wrap;
 }
-
 button{
     padding:10px 16px;
     border:none;
@@ -55,35 +58,34 @@ button{
     cursor:pointer;
     font-weight:bold;
 }
-
-/* tombol solid */
-.btn-preview{ background:#2563eb; color:white; }
-.btn-preview:hover{ background:#1d4ed8; }
-
-.btn-save{ background:#059669; color:white; }
-.btn-save:hover{ background:#047857; }
-
-button:disabled{
-    opacity:0.5;
-    cursor:not-allowed;
-}
+.btn-preview{ background:#3b82f6; color:white; }
+.btn-save{ background:#10b981; color:white; }
+.btn-replace{ background:#f59e0b; color:white; }
+.btn-search{ background:#334155; color:white; }
 
 table{
     width:100%;
     border-collapse:collapse;
 }
-
 th,td{
     padding:10px;
     border:1px solid #ddd;
     font-size:13px;
 }
-
 th{
     background:#334155;
     color:white;
 }
-
+.pagination{
+    margin-top:20px;
+    display:flex;
+    gap:8px;
+    justify-content:center;
+}
+.active-page{
+    background:#1e293b;
+    color:white;
+}
 .loading{
     margin-top:10px;
     color:#3b82f6;
@@ -91,7 +93,6 @@ th{
 }
 </style>
 </head>
-
 <body>
 
 <div class="header">
@@ -104,8 +105,14 @@ th{
 
 <div class="upload-box">
     <input type="file" id="fileInput">
-    <button id="btnPreview" class="btn-preview" onclick="previewFile()" disabled>Preview</button>
-    <button id="btnSave" class="btn-save" onclick="saveData()" disabled>Save</button>
+    <button class="btn-preview" onclick="previewFile()">Preview</button>
+    <button class="btn-save" onclick="saveData()">Save</button>
+    <button class="btn-replace" onclick="replaceData()">Replace</button>
+</div>
+
+<div class="search-box">
+    <input type="text" id="searchNama" placeholder="Cari Nama..." style="padding:10px; width:250px;">
+    <button class="btn-search" onclick="searchPayroll()">Search</button>
 </div>
 
 <p id="loading" class="loading">⏳ Processing...</p>
@@ -113,19 +120,21 @@ th{
 <table>
 <thead>
 <tr>
-<th>Nopeg</th>
-<th>NIK</th>
-<th>NPWP</th>
-<th>Nama</th>
-<th>Jenis Kelamin</th>
-<th>Alamat</th>
-<th>Status Pajak</th>
-<th>TMT</th>
-<th>Project</th>
+    <th>Nopeg</th>
+    <th>NIK</th>
+    <th>NPWP</th>
+    <th>Nama</th>
+    <th>Jenis Kelamin</th>
+    <th>Alamat</th>
+    <th>Status Pajak</th>
+    <th>TMT</th>
+    <th>Project</th>
 </tr>
 </thead>
-<tbody id="table"></tbody>
+<tbody id="payrollTable"></tbody>
 </table>
+
+<div class="pagination" id="pagination"></div>
 
 </div>
 </div>
@@ -135,175 +144,194 @@ const SUPABASE_URL = "https://nwrbjbwjmkahjuuyizfq.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmJqYndqbWthaGp1dXlpemZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MjM4OTIsImV4cCI6MjA5MjQ5OTg5Mn0.n67pONlkoMqZguyoTwQQFJ0VBRfPaIVuVlPGxsajaGA";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+let payrollData = [];
+let filteredData = [];
 let uploadData = [];
+let currentPage = 1;
+const rowsPerPage = 20;
 
-/* AKTIFKAN TOMBOL SETELAH PILIH FILE */
-document.getElementById("fileInput").addEventListener("change", function(){
-    document.getElementById("btnPreview").disabled = false;
-    document.getElementById("btnSave").disabled = false;
-});
-
-/* LOAD DATA DARI DB */
+/* ================= LOAD DATA ================= */
 async function loadPayroll(){
-    console.log("LOAD DATA...");
+    loading(true);
 
     const { data, error } = await supabaseClient
         .from("master_payroll")
-        .select("*"); // ❌ HAPUS .order()
+        .select("*")
+        .order("nama");
+
+    loading(false);
 
     if(error){
-        console.error("LOAD ERROR:", error);
-        alert("Gagal load data: " + error.message);
+        console.error(error);
+        alert("Gagal load data");
         return;
     }
 
-    console.log("DATA DB:", data);
-
-    if(!data || data.length === 0){
-        alert("⚠️ Data kosong (cek database / RLS)");
-    }
-
-    renderTable(data || []);
+    payrollData = data || [];
+    filteredData = payrollData;
+    renderTable();
+    renderPagination();
 }
 
-/* CLEAN STRING */
-function cleanString(value){
-    if(!value) return null;
-    return String(value)
-        .replace(/[\u0000-\u001F\u007F]/g, '')
-        .replace(/"/g, '')
-        .trim();
-}
-
-/* NORMALIZE */
-function normalizeStatusPajak(status){
-    return String(status || '')
-        .trim().toUpperCase()
-        .replace(/\s+/g,'')
-        .replace('TK0','TK/0')
-        .replace('TK1','TK/1')
-        .replace('TK2','TK/2')
-        .replace('TK3','TK/3')
-        .replace('K0','K/0')
-        .replace('K1','K/1')
-        .replace('K2','K/2')
-        .replace('K3','K/3');
-}
-
-/* FORMAT DATE */
-function formatDate(value){
-    if(!value) return null;
-
-    if(typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)){
-        return value;
-    }
-
-    if(typeof value === "string" && value.includes("/")){
-        const [d,m,y] = value.split("/");
-        return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
-    }
-
-    if(typeof value === "number"){
-        const date = new Date((value-25569)*86400*1000);
-        return date.toISOString().split('T')[0];
-    }
-
-    const d = new Date(value);
-    if(isNaN(d)) return null;
-
-    return d.toISOString().split('T')[0];
-}
-
-/* PREVIEW */
+/* ================= PREVIEW FILE ================= */
 function previewFile(){
     const file = document.getElementById("fileInput").files[0];
     if(!file) return alert("Pilih file Excel");
 
     const reader = new FileReader();
-
     reader.onload = function(e){
         const workbook = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const raw = XLSX.utils.sheet_to_json(sheet, {raw:false});
+        const raw = XLSX.utils.sheet_to_json(sheet);
+
+        if(raw.length===0){
+            alert("File kosong");
+            return;
+        }
 
         uploadData = raw.map(row => ({
-            nopeg: cleanString(row.Nopeg || row.NOPEG),
-            nik: cleanString(row.NIK),
-            npwp: cleanString(row.NPWP),
-            nama: cleanString(row.Nama || row.NAMA),
-            jenis_kelamin: cleanString(row["Jenis Kelamin"] || row["JENIS KELAMIN"]),
-            alamat: cleanString(row.Alamat || row.ALAMAT),
-            status_pajak: normalizeStatusPajak(row["Status Pajak"] || ''),
-            tmt: formatDate(row.TMT),
-            project: cleanString(row.Project || row.PROJECT)
+            nopeg: row.Nopeg || row.NOPEG || '',
+            nik: row.NIK || '',
+            npwp: row.NPWP || '',
+            nama: row.Nama || row.NAMA || '',
+            jenis_kelamin: row["Jenis Kelamin"] || row["JENIS KELAMIN"] || '',
+            alamat: row.Alamat || row.ALAMAT || '',
+            status_pajak: row["Status Pajak"] || row["STATUS PAJAK"] || '',
+            tmt: row.TMT || '',
+            project: row.Project || row.PROJECT || ''
         }));
 
-        renderTable(uploadData);
+        payrollData = uploadData;
+        filteredData = uploadData;
+        currentPage = 1;
+        renderTable();
+        renderPagination();
     };
-
     reader.readAsArrayBuffer(file);
 }
 
-/* SAVE */
+/* ================= SAVE ================= */
 async function saveData(){
-    if(uploadData.length === 0){
-        alert("Tidak ada data");
-        return;
-    }
+    if(uploadData.length===0) return alert("Tidak ada data upload");
 
     loading(true);
 
-    const chunkSize = 100;
-
-    for(let i=0;i<uploadData.length;i+=chunkSize){
-        const chunk = uploadData.slice(i,i+chunkSize);
-
-        const { error } = await supabaseClient
-            .from("master_payroll")
-            .insert(chunk);
-
-        if(error){
-            console.error(error);
-            alert("Gagal: " + error.message);
-            loading(false);
-            return;
-        }
-    }
+    const { error } = await supabaseClient
+        .from("master_payroll")
+        .insert(uploadData);
 
     loading(false);
-    alert("✅ Data berhasil disimpan!");
 
-    loadPayroll();
+    if(error){
+        console.error(error);
+        alert("Gagal simpan data");
+    }else{
+        alert("Berhasil simpan data");
+        loadPayroll();
+    }
 }
 
-/* RENDER */
-function renderTable(data){
+/* ================= REPLACE ================= */
+async function replaceData(){
+    if(uploadData.length===0) return alert("Tidak ada data upload");
+    if(!confirm("Replace semua data master payroll?")) return;
+
+    loading(true);
+
+    await supabaseClient
+        .from("master_payroll")
+        .delete()
+        .neq("id",0);
+
+    const { error } = await supabaseClient
+        .from("master_payroll")
+        .insert(uploadData);
+
+    loading(false);
+
+    if(error){
+        console.error(error);
+        alert("Gagal replace data");
+    }else{
+        alert("Replace berhasil");
+        loadPayroll();
+    }
+}
+
+/* ================= RENDER ================= */
+function renderTable(){
+    const start = (currentPage-1)*rowsPerPage;
+    const pageData = filteredData.slice(start,start+rowsPerPage);
+
     let html = "";
 
-    data.forEach(d=>{
+    pageData.forEach(item=>{
         html += `
         <tr>
-            <td>${d.nopeg||''}</td>
-            <td>${d.nik||''}</td>
-            <td>${d.npwp||''}</td>
-            <td>${d.nama||''}</td>
-            <td>${d.jenis_kelamin||''}</td>
-            <td>${d.alamat||''}</td>
-            <td>${d.status_pajak||''}</td>
-            <td>${d.tmt||''}</td>
-            <td>${d.project||''}</td>
+            <td>${item.nopeg||''}</td>
+            <td>${item.nik||''}</td>
+            <td>${item.npwp||''}</td>
+            <td>${item.nama||''}</td>
+            <td>${item.jenis_kelamin||''}</td>
+            <td>${item.alamat||''}</td>
+            <td>${item.status_pajak||''}</td>
+            <td>${formatTanggal(item.tmt)}</td>
+            <td>${item.project||''}</td>
         </tr>`;
     });
 
-    document.getElementById("table").innerHTML = html;
+    document.getElementById("payrollTable").innerHTML = html;
 }
 
-/* LOADING */
-function loading(x){
-    document.getElementById("loading").style.display = x ? "block":"none";
+/* ================= SEARCH ================= */
+function searchPayroll(){
+    const key = document.getElementById("searchNama").value.toLowerCase();
+    filteredData = payrollData.filter(x =>
+        (x.nama||'').toLowerCase().includes(key)
+    );
+    currentPage = 1;
+    renderTable();
+    renderPagination();
 }
 
-/* AUTO LOAD */
+/* ================= PAGINATION ================= */
+function renderPagination(){
+    const totalPages = Math.ceil(filteredData.length/rowsPerPage);
+    let html = "";
+
+    for(let i=1;i<=totalPages;i++){
+        html += `<button class="${i===currentPage?'active-page':''}" onclick="changePage(${i})">${i}</button>`;
+    }
+
+    document.getElementById("pagination").innerHTML = html;
+}
+
+function changePage(page){
+    currentPage = page;
+    renderTable();
+    renderPagination();
+}
+
+/* ================= FORMAT TANGGAL ================= */
+function formatTanggal(value){
+    if(!value) return '';
+
+    if(typeof value === 'number'){
+        const date = new Date((value-25569)*86400*1000);
+        return date.toLocaleDateString('id-ID');
+    }
+
+    const date = new Date(value);
+    if(isNaN(date)) return value;
+
+    return date.toLocaleDateString('id-ID');
+}
+
+/* ================= LOADING ================= */
+function loading(show){
+    document.getElementById("loading").style.display = show ? "block":"none";
+}
+
 window.onload = loadPayroll;
 </script>
 
