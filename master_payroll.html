@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Upload Payroll Lengkap</title>
+<title>Upload Payroll Fix Final</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -21,7 +21,7 @@ th{background:#334155;color:white;}
 
 <body>
 
-<h2>Upload Master Payroll (Lengkap)</h2>
+<h2>Upload Master Payroll (FINAL FIX)</h2>
 
 <input type="file" id="fileInput"><br>
 <button class="btn-preview" onclick="previewFile()">Preview</button>
@@ -53,7 +53,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let uploadData = [];
 
-/* NORMALIZE */
+/* NORMALIZE STATUS */
 function normalizeStatusPajak(status){
     return String(status || '')
         .trim()
@@ -69,11 +69,26 @@ function normalizeStatusPajak(status){
         .replace('K3','K/3');
 }
 
-/* FORMAT DATE */
+/* FORMAT DATE SUPER AMAN */
 function formatDate(value){
     if(!value) return null;
 
-    if(typeof value === 'number'){
+    // sudah format YYYY-MM-DD
+    if(typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)){
+        return value;
+    }
+
+    // format 1/1/2026
+    if(typeof value === "string" && value.includes("/")){
+        const parts = value.split("/");
+        if(parts.length === 3){
+            const [d,m,y] = parts;
+            return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+        }
+    }
+
+    // excel number
+    if(typeof value === "number"){
         const date = new Date((value-25569)*86400*1000);
         return date.toISOString().split('T')[0];
     }
@@ -94,7 +109,9 @@ function previewFile(){
     reader.onload = function(e){
         const workbook = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const raw = XLSX.utils.sheet_to_json(sheet);
+
+        // 🔥 FIX UTAMA
+        const raw = XLSX.utils.sheet_to_json(sheet, { raw:false });
 
         uploadData = raw.map(row => ({
             nopeg: row.Nopeg || row.NOPEG || null,
@@ -108,7 +125,8 @@ function previewFile(){
             project: row.Project || row.PROJECT || null
         }));
 
-        console.log("DATA:", uploadData);
+        console.log("FINAL DATA:", uploadData);
+
         renderTable();
     };
 
@@ -117,25 +135,32 @@ function previewFile(){
 
 /* SAVE */
 async function saveData(){
-    console.log("KIRIM DATA:", uploadData);
-
-    const { data, error } = await supabaseClient
-        .from("master_payroll")
-        .insert(uploadData)
-        .select();
-
-    if(error){
-        console.error("FULL ERROR:", error);
-        alert(JSON.stringify(error, null, 2));
+    if(uploadData.length === 0){
+        alert("Tidak ada data");
         return;
     }
 
-    console.log("SUCCESS:", data);
-    alert("Berhasil!");
-}
+    loading(true);
+
+    const chunkSize = 100;
+
+    for(let i=0;i<uploadData.length;i+=chunkSize){
+        const chunk = uploadData.slice(i,i+chunkSize);
+
+        const { error } = await supabaseClient
+            .from("master_payroll")
+            .insert(chunk);
+
+        if(error){
+            console.error("ERROR DETAIL:", error);
+            alert("Gagal: " + error.message);
+            loading(false);
+            return;
+        }
+    }
 
     loading(false);
-    alert("Berhasil simpan semua data!");
+    alert("✅ Semua data berhasil disimpan!");
 }
 
 /* RENDER */
