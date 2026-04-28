@@ -196,11 +196,24 @@ function previewFile(){
             nama: row.Nama || row.NAMA || '',
             jenis_kelamin: row["Jenis Kelamin"] || row["JENIS KELAMIN"] || '',
             alamat: row.Alamat || row.ALAMAT || '',
-            status_pajak: row["Status Pajak"] || row["STATUS PAJAK"] || '',
+            status_pajak: normalizeStatusPajak(row["Status Pajak"] || row["STATUS PAJAK"] || ''),
             tmt: row.TMT || '',
             project: row.Project || row.PROJECT || ''
         }));
-
+function normalizeStatusPajak(status){
+    return String(status || '')
+        .trim()
+        .toUpperCase()
+        .replace(/\s+/g,'')
+        .replace('TK0','TK/0')
+        .replace('TK1','TK/1')
+        .replace('TK2','TK/2')
+        .replace('TK3','TK/3')
+        .replace('K0','K/0')
+        .replace('K1','K/1')
+        .replace('K2','K/2')
+        .replace('K3','K/3');
+}
         payrollData = uploadData;
         filteredData = uploadData;
         currentPage = 1;
