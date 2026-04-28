@@ -117,29 +117,22 @@ function previewFile(){
 
 /* SAVE */
 async function saveData(){
-    if(uploadData.length === 0){
-        alert("Tidak ada data");
+    console.log("KIRIM DATA:", uploadData);
+
+    const { data, error } = await supabaseClient
+        .from("master_payroll")
+        .insert(uploadData)
+        .select();
+
+    if(error){
+        console.error("FULL ERROR:", error);
+        alert(JSON.stringify(error, null, 2));
         return;
     }
 
-    loading(true);
-
-    const chunkSize = 100;
-
-    for(let i=0;i<uploadData.length;i+=chunkSize){
-        const chunk = uploadData.slice(i,i+chunkSize);
-
-        const { error } = await supabaseClient
-            .from("master_payroll")
-            .insert(chunk);
-
-        if(error){
-            console.error(error);
-            alert("Error: " + error.message);
-            loading(false);
-            return;
-        }
-    }
+    console.log("SUCCESS:", data);
+    alert("Berhasil!");
+}
 
     loading(false);
     alert("Berhasil simpan semua data!");
