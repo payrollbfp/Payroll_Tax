@@ -218,12 +218,33 @@ async function generateTaxEngine(){
 
       const biayaJabatan = Math.min((i+1)*500000,6000000);
       const jumlahNeto = akumulasiBruto - biayaJabatan - akumulasiIuran;
-      const statusPajak = String(master.status_pajak || "TK/0").trim().toUpperCase();
+      const statusPajak = String(master.status_pajak || "TK/0")
+  .trim()
+  .toUpperCase()
+  .replace(/\s+/g,'')
+  .replace("TK0","TK/0")
+  .replace("TK1","TK/1")
+  .replace("TK2","TK/2")
+  .replace("TK3","TK/3")
+  .replace("K0","K/0")
+  .replace("K1","K/1")
+  .replace("K2","K/2")
+  .replace("K3","K/3");
 const ptkp = PTKP_MAP[statusPajak] || 54000000;
       const pkp = Math.max(0, jumlahNeto-ptkp);
 
-      const terRate = row.periode < 12 ? getTERPercent(brutoBulan, statusPajak) : 0;
-      const pphTer = row.periode<12 ? Math.round(brutoBulan*terRate) : 0;
+      const bulan = parseInt(row.periode.split('-')[1]);
+
+const terRate = bulan < 12 ? getTERPercent(brutoBulan, statusPajak) : 0;
+const pphTer = bulan < 12 ? Math.round(brutoBulan * terRate) : 0;
+      console.log({
+  periode: row.periode,
+  bulan,
+  statusPajak,
+  brutoBulan,
+  terRate,
+  pphTer
+});
 
       const pajakKumulatif = getProgressivePPh21Annual(pkp);
       const pphFinal = Math.max(0, pajakKumulatif-totalTERSebelumnya);
