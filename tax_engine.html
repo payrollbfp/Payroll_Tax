@@ -218,10 +218,11 @@ async function generateTaxEngine(){
 
       const biayaJabatan = Math.min((i+1)*500000,6000000);
       const jumlahNeto = akumulasiBruto - biayaJabatan - akumulasiIuran;
-      const ptkp = PTKP_MAP[master.status_pajak] || 54000000;
+      const statusPajak = String(master.status_pajak || "TK/0").trim().toUpperCase();
+const ptkp = PTKP_MAP[statusPajak] || 54000000;
       const pkp = Math.max(0, jumlahNeto-ptkp);
 
-      const terRate = row.periode<12 ? getTERPercent(brutoBulan,master.status_pajak) : 0;
+      const terRate = row.periode < 12 ? getTERPercent(brutoBulan, statusPajak) : 0;
       const pphTer = row.periode<12 ? Math.round(brutoBulan*terRate) : 0;
 
       const pajakKumulatif = getProgressivePPh21Annual(pkp);
