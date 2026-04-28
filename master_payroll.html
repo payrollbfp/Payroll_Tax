@@ -149,6 +149,20 @@ let filteredData = [];
 let uploadData = [];
 let currentPage = 1;
 const rowsPerPage = 20;
+    function normalizeStatusPajak(status){
+    return String(status || '')
+        .trim()
+        .toUpperCase()
+        .replace(/\s+/g,'')
+        .replace('TK0','TK/0')
+        .replace('TK1','TK/1')
+        .replace('TK2','TK/2')
+        .replace('TK3','TK/3')
+        .replace('K0','K/0')
+        .replace('K1','K/1')
+        .replace('K2','K/2')
+        .replace('K3','K/3');
+}
 
 /* ================= LOAD DATA ================= */
 async function loadPayroll(){
@@ -200,20 +214,7 @@ function previewFile(){
             tmt: row.TMT || '',
             project: row.Project || row.PROJECT || ''
         }));
-function normalizeStatusPajak(status){
-    return String(status || '')
-        .trim()
-        .toUpperCase()
-        .replace(/\s+/g,'')
-        .replace('TK0','TK/0')
-        .replace('TK1','TK/1')
-        .replace('TK2','TK/2')
-        .replace('TK3','TK/3')
-        .replace('K0','K/0')
-        .replace('K1','K/1')
-        .replace('K2','K/2')
-        .replace('K3','K/3');
-}
+
         payrollData = uploadData;
         filteredData = uploadData;
         currentPage = 1;
