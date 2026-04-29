@@ -12,8 +12,6 @@ body{
   background:#eef2f7;
   margin:0;
 }
-
-/* ===== NAVBAR ===== */
 .topbar{
   background:#1e293b;
   color:#fff;
@@ -22,39 +20,19 @@ body{
   justify-content:space-between;
   align-items:center;
 }
-.topbar h1{
-  margin:0;
-  font-size:22px;
-}
-.topbar button{
-  background:#64748b;
-  color:#fff;
-  border:none;
-  padding:8px 14px;
-  border-radius:8px;
-  cursor:pointer;
-}
-
-/* ===== WRAPPER ===== */
-.wrapper{
-  padding:20px;
-}
-
-/* ===== CONTAINER ===== */
+.wrapper{padding:20px;}
 .container{
   max-width:100%;
   margin:auto;
   background:#fff;
   padding:20px;
   border-radius:14px;
-  box-shadow:0 4px 12px rgba(0,0,0,.08);
 }
-
-/* ===== BUTTONS ===== */
 .header{
   display:flex;
   gap:10px;
   margin-bottom:20px;
+  align-items:center;
 }
 button{
   padding:10px 16px;
@@ -65,13 +43,11 @@ button{
 }
 .generate{background:#3b82f6;color:#fff;}
 .save{background:#22c55e;color:#fff;}
-.back{background:#94a3b8;color:#fff;}
-
-/* ===== TABLE ===== */
-.table-wrap{
-  overflow:auto;
-  max-height:75vh;
-  border-radius:10px;
+input{
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  width:140px;
 }
 table{
   width:100%;
@@ -82,27 +58,12 @@ th,td{
   border:1px solid #e5e7eb;
   padding:8px;
   text-align:right;
-  white-space:nowrap;
 }
 th{
   background:#334155;
   color:#fff;
-  position:sticky;
-  top:0;
 }
-td{
-  background:#fff;
-}
-tr:nth-child(even) td{
-  background:#f8fafc;
-}
-
-td:first-child,
-td:nth-child(2),
-td:nth-child(3),
-th:first-child,
-th:nth-child(2),
-th:nth-child(3){
+td:first-child,td:nth-child(2),td:nth-child(3){
   text-align:left;
 }
 </style>
@@ -110,34 +71,30 @@ th:nth-child(3){
 
 <body>
 
-<!-- NAVBAR -->
 <div class="topbar">
   <h1>Payroll System</h1>
-  <button onclick="history.back()">Back</button>
 </div>
 
 <div class="wrapper">
 <div class="container">
 
-  <div class="header">
-    <button class="generate" onclick="generateTaxEngine()">Generate Tax</button>
-    <button class="save" onclick="saveTaxEngine()">Save</button>
-    <button class="back" onclick="history.back()">Back</button>
-  </div>
+<div class="header">
+  <input type="number" id="periodeInput" placeholder="Periode (1-12)" min="1" max="12">
+  <button class="generate" onclick="generateTaxEngine()">Generate Tax</button>
+  <button class="save" onclick="saveTaxEngine()">Save</button>
+</div>
 
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>NIK</th><th>Nama</th><th>Project</th><th>Gapok</th><th>Tunjangan</th><th>Premi Asuransi</th><th>Irregular</th>
-          <th>Penghasilan Bruto Bulan</th><th>Akumulasi Penghasilan Bruto</th><th>Akumulasi Biaya Jabatan</th>
-          <th>Iuran Pensiun/JHT</th><th>Jumlah Neto</th><th>PTKP</th><th>PKP</th><th>PPH TER</th>
-          <th>PPH 21 FINAL</th><th>Selisih Pajak</th><th>Keterangan</th>
-        </tr>
-      </thead>
-      <tbody id="taxTableBody"></tbody>
-    </table>
-  </div>
+<table>
+<thead>
+<tr>
+<th>NIK</th><th>Nama</th><th>Project</th><th>Gapok</th><th>Tunjangan</th><th>Premi Asuransi</th><th>Irregular</th>
+<th>Penghasilan Bruto Bulan</th><th>Akumulasi Penghasilan Bruto</th><th>Akumulasi Biaya Jabatan</th>
+<th>Iuran Pensiun/JHT</th><th>Jumlah Neto</th><th>PTKP</th><th>PKP</th><th>PPH TER</th>
+<th>PPH 21 FINAL</th><th>Selisih Pajak</th><th>Keterangan</th>
+</tr>
+</thead>
+<tbody id="taxTableBody"></tbody>
+</table>
 
 </div>
 </div>
@@ -152,7 +109,9 @@ const PTKP_MAP = {
   "K/0":58500000,"K/1":63000000,"K/2":67500000,"K/3":72000000
 };
 
-function formatRp(val){return new Intl.NumberFormat('id-ID').format(Math.round(val||0));}
+function formatRp(val){
+  return new Intl.NumberFormat('id-ID').format(Math.round(val||0));
+}
 
 function getProgressivePPh21Annual(pkp){
   let tax=0;
@@ -183,7 +142,20 @@ function getTERPercent(bruto,status){
 }
 
 async function generateTaxEngine(){
-  const {data: payrollData,error: payrollError}=await supabaseClient.from('payroll').select('*').order('nik').order('periode');
+
+  const periode = document.getElementById('periodeInput').value;
+
+  let query = supabaseClient
+    .from('payroll')
+    .select('*')
+    .order('nik')
+    .order('periode');
+
+  if(periode){
+    query = query.lte('periode', periode);
+  }
+
+  const {data: payrollData,error: payrollError}=await query;
   if(payrollError) return alert(payrollError.message);
 
   const {data: masterData,error: masterError}=await supabaseClient.from('master_payroll').select('nik,nama,project,status_pajak');
@@ -200,12 +172,14 @@ async function generateTaxEngine(){
   for(const nik in grouped){
     const rows = grouped[nik];
     const master = masterMap[nik] || {};
+
     let akumulasiBruto = 0;
     let akumulasiIuran = 0;
     let totalTERSebelumnya = 0;
 
     for(let i=0;i<rows.length;i++){
       const row = rows[i];
+
       const gapok = Number(row.gapok||0);
       const tunjangan = Number(row.tunjangan||0);
       const premi = Number(row.jkk||0)+Number(row.jkm||0)+Number(row.bpjs4||0);
@@ -255,7 +229,20 @@ async function generateTaxEngine(){
 }
 
 async function loadTaxEngine(){
-  const {data,error}=await supabaseClient.from('tax_engine').select('*').order('nik').order('periode');
+
+  const periode = document.getElementById('periodeInput').value;
+
+  let query = supabaseClient
+    .from('tax_engine')
+    .select('*')
+    .order('nik')
+    .order('periode');
+
+  if(periode){
+    query = query.eq('periode', periode);
+  }
+
+  const {data,error}=await query;
   if(error) return alert(error.message);
 
   const tbody = document.getElementById('taxTableBody');
@@ -271,7 +258,10 @@ async function loadTaxEngine(){
   `).join('');
 }
 
-function saveTaxEngine(){ alert('Data sudah otomatis tersimpan saat Generate Tax'); }
+function saveTaxEngine(){
+  alert('Data sudah otomatis tersimpan saat Generate Tax');
+}
+
 window.onload = loadTaxEngine;
 </script>
 
