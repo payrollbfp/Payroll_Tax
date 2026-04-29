@@ -89,32 +89,94 @@ C:[[0,6600000,0],[6600001,6950000,0.0025],[6950001,7350000,0.005],[7350001,78000
 }
 
 async function generateTaxEngine(){
- const {data}=await supabaseClient.from('payroll').select('*').order('nik').order('periode');
- const {data:master}=await supabaseClient.from('master_payroll').select('*');
+
+ const {data: payroll}=await supabaseClient
+   .from('payroll')
+   .select('*')
+   .order('nik')
+   .order('periode');
+
+ const {data: master}=await supabaseClient
+   .from('master_payroll')
+   .select('*');
 
  const map={};
  master.forEach(x=>map[x.nik]=x);
 
- const results=[];
-
- data.forEach(r=>{
-   const bruto=r.gapok+r.tunjangan;
-   const rate=getTERPercent(bruto,map[r.nik]?.status_pajak);
-   const pphTer=bruto*rate;
-
-   results.push({
-     periode:r.periode,
-     nik:r.nik,
-     nama:map[r.nik]?.nama||'',
-     project:map[r.nik]?.project||'',
-     gapok:r.gapok,
-     tunjangan:r.tunjangan,
-     bruto_bulan:bruto,
-     pph_ter:pphTer
-   });
+ const grouped={};
+ payroll.forEach(r=>{
+   if(!grouped[r.nik]) grouped[r.nik]=[];
+   grouped[r.nik].push(r);
  });
 
- await supabaseClient.from('tax_engine').upsert(results,{onConflict:'nik,periode'});
+ const results=[];
+
+ for(const nik in grouped){
+
+   const rows=grouped[nik];
+
+   // 🔥 WAJIB: urutkan periode
+   rows.sort((a,b)=>a.periode-b.periode);
+
+   let akumulasiBruto=0;
+   let totalTERSebelumnya=0;
+
+   for(let i=0;i<rows.length;i++){
+
+     const r=rows[i];
+     const status=map[nik]?.status_pajak;
+
+     const bruto=r.gapok+r.tunjangan;
+
+     // ✅ akumulasi
+     akumulasiBruto+=bruto;
+
+     // ✅ TER bulan ini
+     const rate=getTERPercent(bruto,status);
+     const pphTer=Math.round(bruto*rate);
+
+     // ✅ PKP sederhana (belum biaya jabatan biar konsisten dulu)
+     const ptkp=PTKP_MAP[status]||54000000;
+     const pkp=Math.max(0,akumulasiBruto-ptkp);
+
+     // ✅ pajak progresif tahunan
+     const pajakKumulatif=getProgressivePPh21Annual(pkp);
+
+     // ✅ INI YANG PENTING
+     const pphFinal=Math.max(0,pajakKumulatif-totalTERSebelumnya);
+
+     // simpan
+     results.push({
+       periode:r.periode,
+       nik,
+       nama:map[nik]?.nama||'',
+       project:map[nik]?.project||'',
+       gapok:r.gapok,
+       tunjangan:r.tunjangan,
+       bruto_bulan:bruto,
+       akumulasi_bruto:akumulasiBruto,
+       pph_ter:pphTer,
+       pph_21_final:pphFinal
+     });
+function getProgressivePPh21Annual(pkp){
+ let tax=0;
+ if(pkp<=0) return 0;
+ if(pkp>5000000000){tax+=(pkp-5000000000)*0.35;pkp=5000000000;}
+ if(pkp>500000000){tax+=(pkp-500000000)*0.30;pkp=500000000;}
+ if(pkp>250000000){tax+=(pkp-250000000)*0.25;pkp=250000000;}
+ if(pkp>60000000){tax+=(pkp-60000000)*0.15;pkp=60000000;}
+ tax+=pkp*0.05;
+ return Math.round(tax);
+}
+     // update TER sebelumnya
+     totalTERSebelumnya+=pphTer;
+   }
+ }
+
+ await supabaseClient
+   .from('tax_engine')
+   .upsert(results,{onConflict:'nik,periode'});
+
  alert('Generate OK');
  loadTaxEngine();
 }
