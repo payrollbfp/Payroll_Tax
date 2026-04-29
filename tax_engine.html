@@ -230,8 +230,6 @@ async function generateTaxEngine(){
       akumulasiBruto += brutoBulan;
       akumulasiIuran += iuran;
 
-      const masaKerja = getMasaKerjaBulan(master.tmt, row.periode);
-
 const biayaJabatan = Math.min(
   akumulasiBruto * 0.05,
   (i + 1) * 500000,
@@ -270,7 +268,7 @@ const pphTer = bulan < 12
         selisih_pajak: selisihPajak, keterangan
       });
 
-      if(row.periode<12) totalTERSebelumnya += pphTer;
+      if(bulan < 12) totalTERSebelumnya += pphTer;
     }
   }
 
