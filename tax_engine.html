@@ -140,8 +140,8 @@ function getProgressivePPh21Annual(pkp){
 }
 
 function getTERCategory(status){
-  if(["TK/0","TK/1"].includes(status)) return "A";
-  if(["TK/2","TK/3","K/0"].includes(status)) return "B";
+  if(["TK/0","TK/1","K/0"].includes(status)) return "A";
+  if(["TK/2","TK/3","K/1"].includes(status)) return "B";
   return "C";
 }
 
