@@ -230,11 +230,16 @@ async function generateTaxEngine(){
       akumulasiBruto += brutoBulan;
       akumulasiIuran += iuran;
 
+const urutanBulan = rows
+  .filter(r => r.periode <= row.periode && r.periode.startsWith(tahun))
+  .length;
 
 const biayaJabatan = Math.min(
   akumulasiBruto * 0.05,
-   (i + 1) * 500000,
+  urutanBulan * 500000,
   6000000
+);
+
 );
       const jumlahNeto = akumulasiBruto - biayaJabatan - akumulasiIuran;
       const ptkp = PTKP_MAP[master.status_pajak] || 54000000;
