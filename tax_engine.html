@@ -232,11 +232,11 @@ async function generateTaxEngine(){
 
       const masaKerja = getMasaKerjaBulan(master.tmt, row.periode);
 
-Math.min(
+const biayaJabatan = Math.min(
   akumulasiBruto * 0.05,
   (i + 1) * 500000,
   6000000
-)
+);
       const jumlahNeto = akumulasiBruto - biayaJabatan - akumulasiIuran;
       const ptkp = PTKP_MAP[master.status_pajak] || 54000000;
       const pkp = Math.max(0, jumlahNeto-ptkp);
