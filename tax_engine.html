@@ -95,11 +95,11 @@ td:first-child,td:nth-child(2),td:nth-child(3){
 <div class="wrapper">
 <div class="container">
 
-  <div class="header">
-    <select id="periodeSelect"></select>
+ <div class="header">
+    <select id="periodeSelect" onchange="loadTaxEngine()"></select>
     <button class="generate" onclick="generateTaxEngine()">Generate Tax</button>
     <button class="save" onclick="saveTaxEngine()">Save</button>
-  </div>
+</div>
 
   <div class="table-wrap">
     <table>
@@ -152,15 +152,36 @@ async function loadPeriods(){
 
   loadTaxEngine();
 }
+async function loadPeriods(){
+  const {data, error} = await supabaseClient
+    .from('payroll')
+    .select('periode')
+    .order('periode',{ascending:false});
 
+  if(error){
+    console.error(error);
+    return;
+  }
+
+  const uniquePeriods = [...new Set(data.map(x => x.periode))];
+
+  const select = document.getElementById("periodeSelect");
+  select.innerHTML = uniquePeriods.map(p =>
+    `<option value="${p}">${p}</option>`
+  ).join("");
+
+  loadTaxEngine();
+}
 async function generateTaxEngine(){
   const selectedPeriod = document.getElementById("periodeSelect").value;
 
-  const {data: payrollData}=await supabaseClient
-    .from('payroll')
-    .select('*')
-    .eq('periode', selectedPeriod)
-    .order('nik');
+  const selectedPeriod = document.getElementById("periodeSelect").value;
+
+const {data: payrollData}=await supabaseClient
+  .from('payroll')
+  .select('*')
+  .eq('periode', selectedPeriod)
+  .order('nik');
 
   const {data: masterData}=await supabaseClient
     .from('master_payroll')
@@ -213,11 +234,13 @@ async function generateTaxEngine(){
 async function loadTaxEngine(){
   const selectedPeriod = document.getElementById("periodeSelect").value;
 
-  const {data}=await supabaseClient
-    .from('tax_engine')
-    .select('*')
-    .eq('periode', selectedPeriod)
-    .order('nik');
+  const selectedPeriod = document.getElementById("periodeSelect").value;
+
+const {data}=await supabaseClient
+  .from('tax_engine')
+  .select('*')
+  .eq('periode', selectedPeriod)
+  .order('nik');
 
   document.getElementById('taxTableBody').innerHTML=data.map(r=>`
     <tr>
@@ -247,7 +270,7 @@ function saveTaxEngine(){
   alert("Data otomatis tersimpan saat Generate Tax");
 }
 
-window.onload = loadPeriods;
+window.onload=loadPeriods;
 </script>
 </body>
 </html>
