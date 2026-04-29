@@ -1,276 +1,124 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Tax Engine</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-
-<style>
-body{
-  font-family:Arial,sans-serif;
-  background:#eef2f7;
-  margin:0;
-}
-.topbar{
-  background:#1e293b;
-  color:#fff;
-  padding:16px 24px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-.topbar h1{
-  margin:0;
-  font-size:22px;
-}
-.topbar button{
-  background:#64748b;
-  color:#fff;
-  border:none;
-  padding:8px 14px;
-  border-radius:8px;
-  cursor:pointer;
-}
-.wrapper{
-  padding:20px;
-}
-.container{
-  background:#fff;
-  padding:20px;
-  border-radius:14px;
-  box-shadow:0 4px 12px rgba(0,0,0,.08);
-}
-.header{
-  display:flex;
-  gap:10px;
-  margin-bottom:20px;
-  align-items:center;
-}
-button, select{
-  padding:10px 16px;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-  font-weight:bold;
-}
-.generate{background:#3b82f6;color:#fff;}
-.save{background:#22c55e;color:#fff;}
-select{
-  border:1px solid #cbd5e1;
-}
-.table-wrap{
-  overflow:auto;
-  max-height:75vh;
-}
-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:12px;
-}
-th,td{
-  border:1px solid #e5e7eb;
-  padding:8px;
-  text-align:right;
-  white-space:nowrap;
-}
-th{
-  background:#334155;
-  color:#fff;
-  position:sticky;
-  top:0;
-}
-td:first-child,td:nth-child(2),td:nth-child(3){
-  text-align:left;
-}
-</style>
-</head>
-<body>
-
-<div class="topbar">
-  <h1>Tax Engine</h1>
-  <button onclick="history.back()">Back</button>
-</div>
-
-<div class="wrapper">
-<div class="container">
-
- <div class="header">
-    <select id="periodeSelect" onchange="loadTaxEngine()"></select>
-    <button class="generate" onclick="generateTaxEngine()">Generate Tax</button>
-    <button class="save" onclick="saveTaxEngine()">Save</button>
-</div>
-
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>NIK</th><th>Nama</th><th>Project</th><th>Gapok</th><th>Tunjangan</th><th>Premi</th><th>Irregular</th>
-          <th>Bruto Bulan</th><th>Ak Bruto</th><th>Ak Biaya Jabatan</th>
-          <th>Iuran</th><th>Neto</th><th>PTKP</th><th>PKP</th><th>PPH TER</th>
-          <th>PPH Final</th><th>Selisih</th><th>Keterangan</th>
-        </tr>
-      </thead>
-      <tbody id="taxTableBody"></tbody>
-    </table>
-  </div>
-
-</div>
-</div>
-
-<script>
-const SUPABASE_URL = "https://nwrbjbwjmkahjuuyizfq.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmJqYndqbWthaGp1dXlpemZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MjM4OTIsImV4cCI6MjA5MjQ5OTg5Mn0.n67pONlkoMqZguyoTwQQFJ0VBRfPaIVuVlPGxsajaGA";
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-const PTKP_MAP = {
-  "TK/0":54000000,"TK/1":58500000,"TK/2":63000000,"TK/3":67500000,
-  "K/0":58500000,"K/1":63000000,"K/2":67500000,"K/3":72000000
-};
-
-function formatRp(v){
-  return new Intl.NumberFormat('id-ID').format(Math.round(v||0));
-}
-
-function normalizeStatus(status){
-  return String(status||"TK/0").trim().toUpperCase().replace(/\s+/g,'')
-    .replace("TK0","TK/0").replace("TK1","TK/1")
-    .replace("TK2","TK/2").replace("TK3","TK/3")
-    .replace("K0","K/0").replace("K1","K/1")
-    .replace("K2","K/2").replace("K3","K/3");
-}
-
-async function loadPeriods(){
-  const {data} = await supabaseClient
-    .from("payroll")
-    .select("periode");
-
-  const uniquePeriods = [...new Set(data.map(x=>x.periode))].sort();
-
-  document.getElementById("periodeSelect").innerHTML =
-    uniquePeriods.map(p=>`<option value="${p}">${p}</option>`).join("");
-
-  loadTaxEngine();
-}
-async function loadPeriods(){
-  const {data, error} = await supabaseClient
-    .from('payroll')
-    .select('periode')
-    .order('periode',{ascending:false});
-
-  if(error){
-    console.error(error);
-    return;
-  }
-
-  const uniquePeriods = [...new Set(data.map(x => x.periode))];
-
-  const select = document.getElementById("periodeSelect");
-  select.innerHTML = uniquePeriods.map(p =>
-    `<option value="${p}">${p}</option>`
-  ).join("");
-
-  loadTaxEngine();
-}
 async function generateTaxEngine(){
   const selectedPeriod = document.getElementById("periodeSelect").value;
 
-  const selectedPeriod = document.getElementById("periodeSelect").value;
+  // Ambil payroll sampai periode terpilih (untuk akumulasi tahunan)
+  const { data: payrollData, error: payrollError } = await supabaseClient
+    .from('payroll')
+    .select('*')
+    .lte('periode', selectedPeriod)
+    .order('nik')
+    .order('periode');
 
-const {data: payrollData}=await supabaseClient
-  .from('payroll')
-  .select('*')
-  .eq('periode', selectedPeriod)
-  .order('nik');
+  if(payrollError){
+    console.error(payrollError);
+    alert("Gagal ambil data payroll");
+    return;
+  }
 
-  const {data: masterData}=await supabaseClient
+  const { data: masterData, error: masterError } = await supabaseClient
     .from('master_payroll')
     .select('nik,nama,project,status_pajak');
 
-  const masterMap={};
-  masterData.forEach(x=>masterMap[x.nik]=x);
+  if(masterError){
+    console.error(masterError);
+    alert("Gagal ambil master payroll");
+    return;
+  }
 
-  const results=[];
-
-  payrollData.forEach(row=>{
-    const master=masterMap[row.nik]||{};
-    const status=normalizeStatus(master.status_pajak);
-    const ptkp=PTKP_MAP[status]||54000000;
-
-    const gapok=Number(row.gaji_pokok||0);
-    const tunjangan=Number(row.tunjangan||0);
-    const premi=Number(row.jkk||0)+Number(row.jkm||0)+Number(row.bpjs4||0);
-    const irregular=Number(row.irregular||0);
-    const bruto=gapok+tunjangan+premi+irregular;
-
-    results.push({
-      periode: row.periode,
-      nik: row.nik,
-      nama: master.nama||'',
-      project: master.project||'',
-      gapok,
-      tunjangan,
-      premi_asuransi: premi,
-      irregular,
-      bruto_bulan: bruto,
-      akumulasi_bruto: bruto,
-      akumulasi_biaya_jabatan: bruto*0.05,
-      iuran_pensiun_jht: Number(row.jht2||0)+Number(row.jp1||0),
-      jumlah_neto: bruto-(bruto*0.05),
-      ptkp,
-      pkp: 0,
-      pph_ter: 0,
-      pph_21_final: 0,
-      selisih_pajak: 0,
-      keterangan: "Generated"
-    });
+  const masterMap = {};
+  masterData.forEach(m => {
+    masterMap[m.nik] = m;
   });
 
-  await supabaseClient.from('tax_engine').upsert(results,{onConflict:'nik,periode'});
-  alert("Generate berhasil untuk periode " + selectedPeriod);
+  // Kelompokkan per pegawai per tahun
+  const grouped = {};
+  payrollData.forEach(row => {
+    const tahun = row.periode.split('-')[0];
+    const key = `${row.nik}_${tahun}`;
+    if(!grouped[key]) grouped[key] = [];
+    grouped[key].push(row);
+  });
+
+  const results = [];
+
+  for(const key in grouped){
+    let akBruto = 0;
+    let akIuran = 0;
+    let akTER = 0;
+
+    const rows = grouped[key];
+    const nik = rows[0].nik;
+    const master = masterMap[nik] || {};
+    const status = normalizeStatus(master.status_pajak);
+    const ptkp = PTKP_MAP[status] || 54000000;
+
+    for(const row of rows){
+      const gapok = Number(row.gaji_pokok || 0);
+      const tunjangan = Number(row.tunjangan || 0);
+      const premi = Number(row.jkk || 0) + Number(row.jkm || 0) + Number(row.bpjs4 || 0);
+      const irregular = Number(row.irregular || 0);
+      const iuran = Number(row.jht2 || 0) + Number(row.jp1 || 0);
+
+      const bruto = gapok + tunjangan + premi + irregular;
+
+      akBruto += bruto;
+      akIuran += iuran;
+
+      const biayaJabatan = Math.min(akBruto * 0.05, 6000000);
+      const neto = akBruto - biayaJabatan - akIuran;
+      const pkp = Math.max(0, neto - ptkp);
+
+      // Hitung TER bulan berjalan
+      const terRate = getTERPercent(bruto, status);
+      const pphTer = Math.round(bruto * terRate);
+
+      akTER += pphTer;
+
+      // Hitung PPh final progresif
+      const pphFinal = getProgressivePPh21Annual(pkp);
+      const selisih = pphFinal - akTER;
+
+      let ket = "Nihil";
+      if(selisih > 0) ket = "Kurang Potong";
+      if(selisih < 0) ket = "Lebih Potong";
+
+      // Simpan hanya periode terpilih
+      if(row.periode === selectedPeriod){
+        results.push({
+          periode: row.periode,
+          nik: row.nik,
+          nama: master.nama || '',
+          project: master.project || '',
+          gapok,
+          tunjangan,
+          premi_asuransi: premi,
+          irregular,
+          bruto_bulan: bruto,
+          akumulasi_bruto: akBruto,
+          akumulasi_biaya_jabatan: biayaJabatan,
+          iuran_pensiun_jht: akIuran,
+          jumlah_neto: neto,
+          ptkp,
+          pkp,
+          pph_ter: pphTer,
+          pph_21_final: pphFinal,
+          selisih_pajak: selisih,
+          keterangan: ket
+        });
+      }
+    }
+  }
+
+  const { error: upsertError } = await supabaseClient
+    .from('tax_engine')
+    .upsert(results, { onConflict: 'nik,periode' });
+
+  if(upsertError){
+    console.error(upsertError);
+    alert("Gagal simpan tax engine");
+    return;
+  }
+
+  alert("Generate Tax berhasil untuk periode " + selectedPeriod);
   loadTaxEngine();
 }
-
-async function loadTaxEngine(){
-  const selectedPeriod = document.getElementById("periodeSelect").value;
-
-  const selectedPeriod = document.getElementById("periodeSelect").value;
-
-const {data}=await supabaseClient
-  .from('tax_engine')
-  .select('*')
-  .eq('periode', selectedPeriod)
-  .order('nik');
-
-  document.getElementById('taxTableBody').innerHTML=data.map(r=>`
-    <tr>
-      <td>${r.nik}</td>
-      <td>${r.nama}</td>
-      <td>${r.project}</td>
-      <td>${formatRp(r.gapok)}</td>
-      <td>${formatRp(r.tunjangan)}</td>
-      <td>${formatRp(r.premi_asuransi)}</td>
-      <td>${formatRp(r.irregular)}</td>
-      <td>${formatRp(r.bruto_bulan)}</td>
-      <td>${formatRp(r.akumulasi_bruto)}</td>
-      <td>${formatRp(r.akumulasi_biaya_jabatan)}</td>
-      <td>${formatRp(r.iuran_pensiun_jht)}</td>
-      <td>${formatRp(r.jumlah_neto)}</td>
-      <td>${formatRp(r.ptkp)}</td>
-      <td>${formatRp(r.pkp)}</td>
-      <td>${formatRp(r.pph_ter)}</td>
-      <td>${formatRp(r.pph_21_final)}</td>
-      <td>${formatRp(r.selisih_pajak)}</td>
-      <td>${r.keterangan}</td>
-    </tr>
-  `).join('');
-}
-
-function saveTaxEngine(){
-  alert("Data otomatis tersimpan saat Generate Tax");
-}
-
-window.onload=loadPeriods;
-</script>
-</body>
-</html>
