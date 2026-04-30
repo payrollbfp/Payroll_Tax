@@ -16,9 +16,6 @@ body{
   background:#1e293b;
   color:white;
   padding:16px 24px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
 }
 .wrapper{
   padding:20px;
@@ -155,6 +152,10 @@ function getTERPercent(bruto,status){
  return 0;
 }
 
+function getBiayaJabatanMax(bulanKe){
+ return Math.min(bulanKe*500000,6000000);
+}
+
 function progressiveTax(pkp){
  let tax=0;
  if(pkp>500000000){tax+=(pkp-500000000)*0.30;pkp=500000000;}
@@ -165,10 +166,15 @@ function progressiveTax(pkp){
 }
 
 async function generateTax(){
- let periode=document.getElementById('periodeInput').value.replace('-','');
+ const input=document.getElementById('periodeInput').value;
+ if(!input) return alert("Pilih periode dahulu");
+ const periode=input.replace('-','');
 
- const {data:payroll}=await supabaseClient.from('payroll').select('*').lte('periode',periode).order('nik').order('periode');
- const {data:master}=await supabaseClient.from('master_payroll').select('*');
+ const {data:payroll,error:e1}=await supabaseClient.from('payroll').select('*').lte('periode',periode).order('nik').order('periode');
+ if(e1) return alert(e1.message);
+
+ const {data:master,error:e2}=await supabaseClient.from('master_payroll').select('*');
+ if(e2) return alert(e2.message);
 
  const masterMap={};
  master.forEach(m=>masterMap[m.nik]=m);
@@ -198,30 +204,8 @@ async function generateTax(){
 
      brutoAk+=bruto;
      iuranAk+=iuran;
-function getBiayaJabatanMax(bulanKe){
-  const BIAYA_JABATAN_TABLE = [
-    [1, 500000],
-    [2, 1000000],
-    [3, 1500000],
-    [4, 2000000],
-    [5, 2500000],
-    [6, 3000000],
-    [7, 3500000],
-    [8, 4000000],
-    [9, 4500000],
-    [10, 5000000],
-    [11, 5500000],
-    [12, 6000000]
-  ];
 
-  for(const [bulan,max] of BIAYA_JABATAN_TABLE){
-    if(bulanKe <= bulan) return max;
-  }
-
-  return 6000000;
-}
-     const maxBiayaJabatan = getBiayaJabatanMax(i + 1);
-const biayaJabatan = Math.min(brutoAk * 0.05, maxBiayaJabatan);
+     const biayaJabatan=Math.min(brutoAk*0.05,getBiayaJabatanMax(i+1));
      const neto=brutoAk-biayaJabatan-iuranAk;
      const pkp=Math.max(0,Math.floor((neto-ptkp)/1000)*1000);
 
@@ -231,11 +215,7 @@ const biayaJabatan = Math.min(brutoAk * 0.05, maxBiayaJabatan);
 
      const pphFinal=bulan===12?progressiveTax(pkp):0;
      const selisih=bulan===12?pphFinal-terAk:0;
-
-     let ket='';
-     if(bulan===12){
-       ket=selisih<0?'Lebih Potong':selisih>0?'Kurang Potong':'Nihil';
-     }
+     const ket=bulan===12?(selisih<0?'Lebih Potong':selisih>0?'Kurang Potong':'Nihil'):'';
 
      if(r.periode===periode){
        results.push({
@@ -263,13 +243,20 @@ const biayaJabatan = Math.min(brutoAk * 0.05, maxBiayaJabatan);
    }
  }
 
- await supabaseClient.from('tax_engine').upsert(results,{onConflict:'nik,periode'});
+ const {error:e3}=await supabaseClient.from('tax_engine').upsert(results,{onConflict:'nik,periode'});
+ if(e3) return alert(e3.message);
+
+ alert("Generate Tax berhasil");
  loadTax();
 }
 
 async function loadTax(){
- let periode=document.getElementById('periodeInput').value.replace('-','');
- const {data}=await supabaseClient.from('tax_engine').select('*').eq('periode',periode);
+ const input=document.getElementById('periodeInput').value;
+ if(!input) return;
+ const periode=input.replace('-','');
+
+ const {data,error}=await supabaseClient.from('tax_engine').select('*').eq('periode',periode);
+ if(error) return alert(error.message);
 
  const tbody=document.getElementById('taxBody');
  tbody.innerHTML=data.map(r=>`
