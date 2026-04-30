@@ -199,7 +199,8 @@ async function generateTax(){
      brutoAk+=bruto;
      iuranAk+=iuran;
 
-     const biayaJabatan=Math.min(brutoAk*0.05,(i+1)*500000);
+     const batasBiayaJabatan = Math.min(rows.length * 500000, 6000000);
+const biayaJabatan = Math.min(brutoAk * 0.05, batasBiayaJabatan);
      const neto=brutoAk-biayaJabatan-iuranAk;
      const pkp=Math.max(0,Math.floor((neto-ptkp)/1000)*1000);
 
