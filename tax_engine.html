@@ -221,9 +221,7 @@ alert("Generate Tax berhasil: " + saveData.length + " rows");
      const pphTer=bulan===12?0:Math.round(bruto*getTERPercent(bruto,mp.status_pajak));
      terAk+=pphTer;
 
-     const pphFinal=bulan===12?progressiveTax(pkp):0;
-     const selisih=bulan===12?(pphFinal-terAk):0;
-     const ket=bulan===12?(selisih<0?'Lebih Potong':selisih>0?'Kurang Potong':'Nihil'):'';
+    const pphFinal = progressiveTax(pkp);
 
      if(r.periode===periode){
        results.push({
