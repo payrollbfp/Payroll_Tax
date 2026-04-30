@@ -145,12 +145,31 @@ function getBiayaJabatanMax(bulanKe){
 }
 
 function progressiveTax(pkp){
- let tax=0;
- if(pkp>500000000){tax+=(pkp-500000000)*0.30;pkp=500000000;}
- if(pkp>250000000){tax+=(pkp-250000000)*0.25;pkp=250000000;}
- if(pkp>60000000){tax+=(pkp-60000000)*0.15;pkp=60000000;}
- tax+=pkp*0.05;
- return Math.round(tax);
+  let tax = 0;
+
+  if (pkp > 5000000000){
+    tax += (pkp - 5000000000) * 0.35;
+    pkp = 5000000000;
+  }
+
+  if (pkp > 500000000){
+    tax += (pkp - 500000000) * 0.30;
+    pkp = 500000000;
+  }
+
+  if (pkp > 250000000){
+    tax += (pkp - 250000000) * 0.25;
+    pkp = 250000000;
+  }
+
+  if (pkp > 60000000){
+    tax += (pkp - 60000000) * 0.15;
+    pkp = 60000000;
+  }
+
+  tax += pkp * 0.05;
+
+  return Math.round(tax);
 }
 
 async function generateTax(){
@@ -204,7 +223,8 @@ async function generateTax(){
 
      terAk += pphTer;
 
-     const pphFinal = bulan===12 ? progressiveTax(pkp) : 0;
+    const pphFinal = progressiveTax(pkp);
+     console.log("NIK:", nik, "PKP:", pkp, "PPH FINAL:", pphFinal);
      const selisih = bulan===12 ? pphFinal-terAk : 0;
      const ket = bulan===12 ? (selisih<0?'Lebih Potong':selisih>0?'Kurang Potong':'Nihil') : '';
 
