@@ -217,7 +217,7 @@ if(periode){
   const {data: payrollData,error: payrollError}=await query;
   if(payrollError) return alert(payrollError.message);
 
-  const {data: masterData,error: masterError}=await supabaseClient.from('master_payroll').select('nik,nama,project,status_pajak');
+  const {data: masterData,error: masterError}=await supabaseClient.from('master_payroll').select('nik,nama,project,status_pajak,tmt');
   if(masterError) return alert(masterError.message);
 
   const masterMap = {};
@@ -261,7 +261,8 @@ const biayaJabatan = Math.min(
 );
       const jumlahNeto = akumulasiBruto - biayaJabatan - akumulasiIuran;
       const ptkp = PTKP_MAP[master.status_pajak] || 54000000;
-      const pkp = Math.max(0, jumlahNeto-ptkp);
+      let pkp = Math.max(0, jumlahNeto - ptkp);
+pkp = Math.floor(pkp / 1000) * 1000;
 
       const bulan = Number(row.periode.toString().slice(-2));
 
