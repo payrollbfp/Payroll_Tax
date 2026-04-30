@@ -217,7 +217,7 @@ if(periode){
   const {data: payrollData,error: payrollError}=await query;
   if(payrollError) return alert(payrollError.message);
 
-  const {data: masterData,error: masterError}=await supabaseClient.from('master_payroll').select('nik,nama,project,status_pajak,tmt');
+  const {data: masterData,error: masterError}=await supabaseClient.from('master_payroll').select('nik,nama,project,status_pajak');
   if(masterError) return alert(masterError.message);
 
   const masterMap = {};
@@ -241,9 +241,8 @@ if(periode){
 
     for(let i=0;i<rows.length;i++){
       const row = rows[i];
-      const safeNumber = (val) => isNaN(Number(val)) ? 0 : Number(val);
 
-      const gapok = Number(row.gapok || row.gaji_pokok || 0);
+      const gapok = Number(row.gaji_pokok||0);
       const tunjangan = Number(row.tunjangan||0);
       const premi = Number(row.jkk||0)+Number(row.jkm||0)+Number(row.bpjs4||0);
       const irregular = Number(row.irregular||0);
@@ -262,10 +261,8 @@ const biayaJabatan = Math.min(
 );
       const jumlahNeto = akumulasiBruto - biayaJabatan - akumulasiIuran;
       const ptkp = PTKP_MAP[master.status_pajak] || 54000000;
-     let pkp = Math.max(0, jumlahNeto - ptkp);
+      const pkp = Math.max(0, jumlahNeto-ptkp);
 
-// pembulatan ribuan ke bawah (WAJIB)
-pkp = Math.floor(pkp / 1000) * 1000;
       const bulan = Number(row.periode.toString().slice(-2));
 
 const terRate = bulan < 12 
@@ -277,11 +274,8 @@ const pphTer = bulan < 12
   : 0;
 
       const pajakKumulatif = getProgressivePPh21Annual(pkp);
-     // PPH FINAL = FULL NORMATIF (TIDAK DIKURANGI TER)
-const pphFinal = pajakKumulatif;
-
-// SELISIH = FINAL - TER BULAN INI SAJA
-const selisihPajak = pphFinal - pphTer;
+      const pphFinal = Math.max(0, pajakKumulatif-totalTERSebelumnya);
+      const selisihPajak = pphFinal-pphTer;
 
       let keterangan = 'Nihil';
       if(selisihPajak<0) keterangan='Lebih Potong';
