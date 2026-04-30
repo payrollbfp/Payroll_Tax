@@ -177,32 +177,10 @@ function getTERPercent(bruto,status){
   }
   return 0;
 }
-function getMasaKerjaBulan(tmt, periode){
-  if(!tmt) return 1;
 
-  const tmtDate = new Date(tmt);
-
-  // convert 202501 → 2025-01-01
-  const year = periode.toString().substring(0,4);
-  const month = periode.toString().substring(4,6);
-
-  const periodeDate = new Date(`${year}-${month}-01`);
-
-  let diff =
-    (periodeDate.getFullYear() - tmtDate.getFullYear()) * 12 +
-    (periodeDate.getMonth() - tmtDate.getMonth()) + 1;
-
-  if(diff < 1) diff = 1;
-
-  return diff;
-}
 async function generateTaxEngine(){
 
-  let periode = document.getElementById('periodeInput').value;
-
-if(periode){
-  periode = periode.replace('-', ''); // 2025-01 → 202501
-}
+  const periode = document.getElementById('periodeInput').value;
 
   let query = supabaseClient
     .from('payroll')
@@ -263,7 +241,7 @@ const biayaJabatan = Math.min(
       const ptkp = PTKP_MAP[master.status_pajak] || 54000000;
       const pkp = Math.max(0, jumlahNeto-ptkp);
 
-      const bulan = Number(row.periode.toString().slice(-2));
+      const bulan = Number(row.periode.split('-')[1]);
 
 const terRate = bulan < 12 
   ? getTERPercent(brutoBulan, master.status_pajak) 
@@ -292,7 +270,7 @@ const pphTer = bulan < 12
         selisih_pajak: selisihPajak, keterangan
       });
 
-      if(bulan < 12) totalTERSebelumnya += pphTer;
+      if(row.periode<12) totalTERSebelumnya += pphTer;
     }
   }
 
