@@ -166,93 +166,110 @@ function progressiveTax(pkp){
 }
 
 async function generateTax(){
- const input=document.getElementById('periodeInput').value;
- if(!input) return alert("Pilih periode dahulu");
- const periode=input.replace('-','');
+ try{
+   const input=document.getElementById('periodeInput').value;
+   if(!input) return alert("Pilih periode dahulu");
 
- const {data:payroll,error:e1}=await supabaseClient.from('payroll').select('*').lte('periode',periode).order('nik').order('periode');
- if(e1) return alert(e1.message);
+   const periode=input.replace('-','');
 
- const {data:master,error:e2}=await supabaseClient.from('master_payroll').select('*');
- if(e2) return alert(e2.message);
+   const {data:payroll,error:e1}=await supabaseClient.from('payroll').select('*').lte('periode',periode).order('nik').order('periode');
+   if(e1) return alert("Payroll Error: "+e1.message);
+   alert("Payroll ditemukan: "+payroll.length);
 
- const masterMap={};
- master.forEach(m=>masterMap[m.nik]=m);
+   const {data:master,error:e2}=await supabaseClient.from('master_payroll').select('*');
+   if(e2) return alert("Master Error: "+e2.message);
+   alert("Master ditemukan: "+master.length);
 
- const grouped={};
- payroll.forEach(r=>{
-   if(!grouped[r.nik]) grouped[r.nik]=[];
-   grouped[r.nik].push(r);
- });
+   const masterMap={};
+   master.forEach(m=>masterMap[m.nik]=m);
 
- const results=[];
+   const grouped={};
+   payroll.forEach(r=>{
+     if(!grouped[r.nik]) grouped[r.nik]=[];
+     grouped[r.nik].push(r);
+   });
 
- for(const nik in grouped){
-   let brutoAk=0,iuranAk=0,terAk=0;
-   const rows=grouped[nik];
-   const mp=masterMap[nik]||{};
-   const ptkp=PTKP[normalizeStatusPajak(mp.status_pajak)]||54000000;
+   const results=[];
 
-   for(let i=0;i<rows.length;i++){
-     const r=rows[i];
-     const gapok=Number(r.gaji_pokok||0);
-     const tunjangan=Number(r.tunjangan||0);
-     const premi=Number(r.jkk||0)+Number(r.jkm||0)+Number(r.bpjs4||0);
-     const thr=Number(r.irregular||0);
-     const bruto=gapok+tunjangan+premi+thr;
-     const iuran=Number(r.jht2||0)+Number(r.jp1||0);
+   for(const nik in grouped){
+     let brutoAk=0,iuranAk=0,terAk=0;
+     const rows=grouped[nik];
+     const mp=masterMap[nik]||{};
+     const ptkp=PTKP[normalizeStatusPajak(mp.status_pajak)]||54000000;
 
-     brutoAk+=bruto;
-     iuranAk+=iuran;
+     for(let i=0;i<rows.length;i++){
+       const r=rows[i];
 
-     const biayaJabatan=Math.min(brutoAk*0.05,getBiayaJabatanMax(i+1));
-     const neto=brutoAk-biayaJabatan-iuranAk;
-     const pkp=Math.max(0,Math.floor((neto-ptkp)/1000)*1000);
+       const gapok=Number(r.gaji_pokok ?? r.gapok ?? 0);
+       const tunjangan=Number(r.tunjangan ?? 0);
+       const premi=Number(r.jkk ?? 0)+Number(r.jkm ?? 0)+Number(r.bpjs4 ?? 0);
+       const thr=Number(r.irregular ?? 0);
+       const iuran=Number(r.jht2 ?? 0)+Number(r.jp1 ?? 0);
 
-     const bulan=Number(r.periode.slice(-2));
-     const pphTer=bulan===12?0:Math.round(bruto*getTERPercent(bruto,mp.status_pajak));
-     terAk+=pphTer;
+       const bruto=gapok+tunjangan+premi+thr;
 
-     const pphFinal=bulan===12?progressiveTax(pkp):0;
-     const selisih=bulan===12?pphFinal-terAk:0;
-     const ket=bulan===12?(selisih<0?'Lebih Potong':selisih>0?'Kurang Potong':'Nihil'):'';
+       brutoAk+=bruto;
+       iuranAk+=iuran;
 
-     if(r.periode===periode){
-       results.push({
-         periode:r.periode,
-         nik,
-         nama:mp.nama||'',
-         project:mp.project||'',
-         gapok,
-         tunjangan,
-         premi_asuransi:premi,
-         irregular:thr,
-         bruto_bulan:bruto,
-         akumulasi_bruto:brutoAk,
-         akumulasi_biaya_jabatan:biayaJabatan,
-         iuran_pensiun_jht:iuranAk,
-         jumlah_neto:neto,
-         ptkp,
-         pkp,
-         pph_ter:pphTer,
-         pph_21_final:pphFinal,
-         selisih_pajak:selisih,
-         keterangan:ket
-       });
+       const biayaJabatan=Math.min(brutoAk*0.05,getBiayaJabatanMax(i+1));
+       const neto=brutoAk-biayaJabatan-iuranAk;
+       const pkp=Math.max(0,Math.floor((neto-ptkp)/1000)*1000);
+
+       const bulan=Number(String(r.periode).slice(-2));
+       const pphTer=bulan===12?0:Math.round(bruto*getTERPercent(bruto,mp.status_pajak));
+       terAk+=pphTer;
+
+       const pphFinal=bulan===12?progressiveTax(pkp):0;
+       const selisih=bulan===12?pphFinal-terAk:0;
+       const ket=bulan===12?(selisih<0?'Lebih Potong':selisih>0?'Kurang Potong':'Nihil'):'';
+
+       if(String(r.periode).replace('-','')===periode){
+         results.push({
+           periode:r.periode,
+           nik,
+           nama:mp.nama||'',
+           project:mp.project||'',
+           gapok,
+           tunjangan,
+           premi_asuransi:premi,
+           irregular:thr,
+           bruto_bulan:bruto,
+           akumulasi_bruto:brutoAk,
+           akumulasi_biaya_jabatan:biayaJabatan,
+           iuran_pensiun_jht:iuranAk,
+           jumlah_neto:neto,
+           ptkp,
+           pkp,
+           pph_ter:pphTer,
+           pph_21_final:pphFinal,
+           selisih_pajak:selisih,
+           keterangan:ket
+         });
+       }
      }
    }
+
+   alert("Data generate: "+results.length);
+
+   if(results.length===0){
+     return alert("Tidak ada data generate");
+   }
+
+   const {error:e3}=await supabaseClient.from('tax_engine').upsert(results,{onConflict:'nik,periode'});
+   if(e3) return alert("Save Error: "+e3.message);
+
+   alert("Generate Tax berhasil");
+   loadTax();
+
+ }catch(err){
+   alert("JS Error: "+err.message);
  }
-
- const {error:e3}=await supabaseClient.from('tax_engine').upsert(results,{onConflict:'nik,periode'});
- if(e3) return alert(e3.message);
-
- alert("Generate Tax berhasil");
- loadTax();
 }
 
 async function loadTax(){
  const input=document.getElementById('periodeInput').value;
  if(!input) return;
+
  const periode=input.replace('-','');
 
  const {data,error}=await supabaseClient.from('tax_engine').select('*').eq('periode',periode);
