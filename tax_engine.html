@@ -241,8 +241,9 @@ if(periode){
 
     for(let i=0;i<rows.length;i++){
       const row = rows[i];
+      const safeNumber = (val) => isNaN(Number(val)) ? 0 : Number(val);
 
-      const gapok = Number(row.gaji_pokok||0);
+      const gapok = Number(row.gapok || row.gaji_pokok || 0);
       const tunjangan = Number(row.tunjangan||0);
       const premi = Number(row.jkk||0)+Number(row.jkm||0)+Number(row.bpjs4||0);
       const irregular = Number(row.irregular||0);
