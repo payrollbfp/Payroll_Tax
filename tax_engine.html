@@ -236,7 +236,8 @@ if(periode){
     grouped[r.nik].push(r);
   });
 
-  const results = [];
+  if(row.periode == periode){
+  results.push({
 
   for(const nik in grouped){
     const rows = grouped[nik];
