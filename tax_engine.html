@@ -274,8 +274,11 @@ const pphTer = bulan < 12
   : 0;
 
       const pajakKumulatif = getProgressivePPh21Annual(pkp);
-      const pphFinal = Math.max(0, pajakKumulatif-totalTERSebelumnya);
-      const selisihPajak = pphFinal-pphTer;
+     // PPH FINAL = FULL NORMATIF (TIDAK DIKURANGI TER)
+const pphFinal = pajakKumulatif;
+
+// SELISIH = FINAL - TER BULAN INI SAJA
+const selisihPajak = pphFinal - pphTer;
 
       let keterangan = 'Nihil';
       if(selisihPajak<0) keterangan='Lebih Potong';
