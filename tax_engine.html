@@ -182,11 +182,18 @@ function getMasaKerjaBulan(tmt, periode){
 
   const tmtDate = new Date(tmt);
 
-  // convert 202501 → 2025-01-01
-  const year = periode.toString().substring(0,4);
-  const month = periode.toString().substring(4,6);
+  let periodeDate;
 
-  const periodeDate = new Date(`${year}-${month}-01`);
+  // HANDLE 2 FORMAT: 202501 dan 2025-01
+  if(periode.toString().includes('-')){
+    periodeDate = new Date(periode + '-01');
+  } else {
+    const year = periode.toString().substring(0,4);
+    const month = periode.toString().substring(4,6);
+    periodeDate = new Date(`${year}-${month}-01`);
+  }
+
+  if(isNaN(periodeDate)) return 1;
 
   let diff =
     (periodeDate.getFullYear() - tmtDate.getFullYear()) * 12 +
