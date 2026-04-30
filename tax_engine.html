@@ -171,7 +171,15 @@ function progressiveTax(pkp){
 
   return Math.round(tax);
 }
+function normalizePeriode(p){
+  if(!p) return '';
+  p = p.toString();
 
+  if(p.includes('-')){
+    return p.replace('-',''); // 2025-01 → 202501
+  }
+  return p;
+}
 async function generateTax(){
  const periode=document.getElementById('periodeInput').value;
  if(!periode) return alert("Pilih periode dahulu");
@@ -181,7 +189,9 @@ async function generateTax(){
 
  const {data:master,error:e2}=await supabaseClient.from('master_payroll').select('*');
  if(e2) return alert(e2.message);
-
+payroll.forEach(r=>{
+  r.periode = normalizePeriode(r.periode);
+});
  alert("Payroll ditemukan: "+payroll.length);
 
  const masterMap={};
@@ -264,7 +274,10 @@ const pkp = Math.max(0, Math.floor((neto - ptkp)/1000)*1000);
 }
 
 async function loadTax(){
- const periode=document.getElementById('periodeInput').value;
+ let periodeInput = document.getElementById('periodeInput').value;
+if(!periodeInput) return alert("Pilih periode dahulu");
+
+const periode = normalizePeriode(periodeInput);
  if(!periode) return;
 
  const {data,error}=await supabaseClient.from('tax_engine').select('*').eq('periode',periode).order('nik');
