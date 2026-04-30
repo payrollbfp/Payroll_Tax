@@ -261,40 +261,45 @@ async function generateTax(){
 }
 
 async function loadTax(){
- const periode=document.getElementById('periodeInput').value;
- if(!periode) return;
+  const periode = document.getElementById("periodeInput").value;
+  if(!periode) return;
 
- const {data,error}=await supabaseClient
-   .from('tax_engine')
-   .select('*')
-   .eq('periode',periode)
-   .order('nik');
+  const { data, error } = await supabaseClient
+    .from("tax_engine")
+    .select("*")
+    .eq("periode", periode)
+    .order("nik");
 
- if(error) return alert(error.message);
+  if(error){
+    alert(error.message);
+    return;
+  }
 
- const tbody=document.getElementById('taxBody');
- tbody.innerHTML=data.map(r=>`
- <tr>
- <td>${r.nik}</td>
- <td>${r.nama}</td>
- <td>${r.project}</td>
- <td>${formatRp(r.gapok)}</td>
- <td>${formatRp(r.tunjangan)}</td>
- <td>${formatRp(r.premi_asuransi)}</td>
- <td>${formatRp(r.irregular)}</td>
- <td>${formatRp(r.bruto_bulan)}</td>
- <td>${formatRp(r.akumulasi_bruto)}</td>
- <td>${formatRp(r.akumulasi_biaya_jabatan)}</td>
- <td>${formatRp(r.iuran_pensiun_jht)}</td>
- <td>${formatRp(r.jumlah_neto)}</td>
- <td>${formatRp(r.ptkp)}</td>
- <td>${formatRp(r.pkp)}</td>
- <td>${formatRp(r.pph_ter)}</td>
- <td>${formatRp(r.pph_21_final)}</td>
- <td>${formatRp(r.selisih_pajak)}</td>
- <td>${r.keterangan||''}</td>
- </tr>
- `).join('');
+  console.log("LOAD TAX:", data);
+
+  const tbody = document.getElementById("taxBody");
+  tbody.innerHTML = data.map(r=>`
+    <tr>
+      <td>${r.nik}</td>
+      <td>${r.nama}</td>
+      <td>${r.project}</td>
+      <td>${formatRp(r.gapok)}</td>
+      <td>${formatRp(r.tunjangan)}</td>
+      <td>${formatRp(r.premi_asuransi)}</td>
+      <td>${formatRp(r.irregular)}</td>
+      <td>${formatRp(r.bruto_bulan)}</td>
+      <td>${formatRp(r.akumulasi_bruto)}</td>
+      <td>${formatRp(r.akumulasi_biaya_jabatan)}</td>
+      <td>${formatRp(r.iuran_pensiun_jht)}</td>
+      <td>${formatRp(r.jumlah_neto)}</td>
+      <td>${formatRp(r.ptkp)}</td>
+      <td>${formatRp(r.pkp)}</td>
+      <td>${formatRp(r.pph_ter)}</td>
+      <td>${formatRp(r.pph_21_final)}</td>
+      <td>${formatRp(r.selisih_pajak)}</td>
+      <td>${r.keterangan || ''}</td>
+    </tr>
+  `).join('');
 }
 
 function saveTax(){
