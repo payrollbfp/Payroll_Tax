@@ -57,7 +57,7 @@ td:nth-child(3){
 <h2>Tax Engine</h2>
 
 <button onclick="generateTax()">Generate Tax</button>
-<select id="periode"></select>
+<input type="month" id="periode">
 <button onclick="saveData()">Save</button>
 <button onclick="location.reload()">Back</button>
 
@@ -328,6 +328,15 @@ async function saveData(){
     }
 }
 
+    function setDefaultPeriode(){
+    let now = new Date()
+    let year = now.getFullYear()
+    let month = (now.getMonth()+1).toString().padStart(2,'0')
+
+    document.getElementById("periode").value = `${year}-${month}`
+}
+
+setDefaultPeriode()
 // INIT
 generatePeriode()
 </script>
