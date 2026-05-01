@@ -2,16 +2,12 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Tax Engine</title>
+<title>Tax Engine DJP</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
 <style>
-body{
-    margin:0;
-    font-family:Segoe UI;
-    background:#f4f6f9;
-}
+body{margin:0;font-family:Segoe UI;background:#f4f6f9}
 
 /* HEADER */
 .header{
@@ -20,20 +16,6 @@ body{
     padding:15px 20px;
     display:flex;
     justify-content:space-between;
-    align-items:center;
-}
-
-.header h2{
-    margin:0;
-}
-
-.header button{
-    background:#6c757d;
-}
-
-/* CONTENT */
-.container{
-    padding:20px;
 }
 
 /* BUTTON */
@@ -44,57 +26,33 @@ button{
     cursor:pointer;
     color:white;
 }
+.btn-blue{background:#3498db}
+.btn-green{background:#27ae60}
+.btn-orange{background:#f39c12}
+.btn-grey{background:#6c757d}
 
-.btn-blue{background:#3498db;}
-.btn-green{background:#27ae60;}
-.btn-orange{background:#f39c12;}
-.btn-grey{background:#6c757d;}
+/* CONTENT */
+.container{padding:20px}
 
-/* ACTION BAR */
+/* ACTION */
 .action-bar{
-    margin-bottom:15px;
     display:flex;
     gap:10px;
-    align-items:center;
-}
-
-input[type="month"]{
-    padding:6px;
+    margin-bottom:15px;
 }
 
 /* TABLE */
-table{
-    width:100%;
-    border-collapse:collapse;
-    background:white;
-}
-
-th{
-    background:#34495e;
-    color:white;
-    padding:8px;
-    font-size:12px;
-}
-
-td{
-    padding:6px;
-    border-bottom:1px solid #ddd;
-    font-size:12px;
-    text-align:right;
-}
-
-td:nth-child(1),
-td:nth-child(2),
-td:nth-child(3){
-    text-align:left;
-}
+table{width:100%;border-collapse:collapse;background:white}
+th{background:#34495e;color:white;padding:8px;font-size:12px}
+td{padding:6px;border-bottom:1px solid #ddd;font-size:12px;text-align:right}
+td:nth-child(1),td:nth-child(2),td:nth-child(3){text-align:left}
 </style>
 </head>
 
 <body>
 
 <div class="header">
-    <h2>Tax Engine</h2>
+    <h2>Tax Engine DJP</h2>
     <button class="btn-grey" onclick="goBack()">Back</button>
 </div>
 
@@ -113,19 +71,15 @@ td:nth-child(3){
 <th>NIK</th>
 <th>Nama</th>
 <th>Project</th>
-<th>Gapok</th>
-<th>Tunjangan</th>
-<th>Premi Asuransi</th>
-<th>Irregular</th>
-<th>Penghasilan Bruto Bulanan</th>
-<th>Akum Penghasilan Bruto</th>
-<th>Biaya Jabatan</th>
-<th>Iuran Pensiun</th>
-<th>Jumlah Neto</th>
+<th>Bruto</th>
+<th>Akum Bruto</th>
+<th>Biaya</th>
+<th>Pensiun</th>
+<th>Neto</th>
 <th>PTKP</th>
 <th>PKP</th>
-<th>PPH TER</th>
-<th>PPH 21 FINAL</th>
+<th>TER</th>
+<th>PPh21</th>
 <th>Selisih</th>
 <th>Keterangan</th>
 </tr>
@@ -136,6 +90,8 @@ td:nth-child(3){
 </div>
 
 <script>
+
+// ================= SUPABASE =================
 const supabase = window.supabase.createClient(
 'https://nwrbjbwjmkahjuuyizfq.supabase.co',
 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmJqYndqbWthaGp1dXlpemZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MjM4OTIsImV4cCI6MjA5MjQ5OTg5Mn0.n67pONlkoMqZguyoTwQQFJ0VBRfPaIVuVlPGxsajaGA'
@@ -143,72 +99,207 @@ const supabase = window.supabase.createClient(
 
 let hasil = []
 
-// ================= BACK BUTTON FIX =================
+// ================= BACK =================
 function goBack(){
-    window.location.href = "dashboard.html" // pastikan nama file sesuai
+    window.location.href = "dashboard.html"
 }
 
 // ================= DEFAULT PERIODE =================
 function setDefaultPeriode(){
-    let now = new Date()
-    let y = now.getFullYear()
-    let m = (now.getMonth()+1).toString().padStart(2,'0')
+    let d = new Date()
+    let y = d.getFullYear()
+    let m = (d.getMonth()+1).toString().padStart(2,'0')
     document.getElementById("periode").value = `${y}-${m}`
+}
+
+// ================= PTKP =================
+function getPTKP(status){
+    const map={
+        "TK/0":54000000,"TK/1":58500000,"TK/2":63000000,"TK/3":67500000,
+        "K/0":58500000,"K/1":63000000,"K/2":67500000,"K/3":72000000
+    }
+    return map[status]||54000000
+}
+
+// ================= PROGRESIF =================
+function progresif(pkp){
+    if(pkp<=0) return 0
+    let pajak=0
+    if(pkp>500000000){pajak+=(pkp-500000000)*0.30;pkp=500000000}
+    if(pkp>250000000){pajak+=(pkp-250000000)*0.25;pkp=250000000}
+    if(pkp>50000000){pajak+=(pkp-50000000)*0.15;pkp=50000000}
+    pajak+=pkp*0.05
+    return pajak
+}
+
+// ================= TER =================
+function getTER(bruto, status){
+
+    status = (status||"").trim()
+
+    let kategori = "C"
+    if(["TK/0","TK/1","K/0"].includes(status)) kategori="A"
+    else if(["TK/2","TK/3","K/1"].includes(status)) kategori="B"
+
+    let tarif = 0
+
+    // ================= KATEGORI A =================
+    if(kategori==="A"){
+        if(bruto >= 0 && bruto <= 5000000) tarif = 0
+        else if(bruto >= 5000001 && bruto <= 6000000) tarif = 0.0025
+        else if(bruto >= 6000001 && bruto <= 7000000) tarif = 0.005
+        else if(bruto >= 7000001 && bruto <= 8000000) tarif = 0.0075
+        else if(bruto >= 8000001 && bruto <= 9000000) tarif = 0.01
+        else if(bruto >= 9000001 && bruto <= 10000000) tarif = 0.015
+        else if(bruto >= 10000001 && bruto <= 15000000) tarif = 0.02
+        else if(bruto >= 15000001 && bruto <= 20000000) tarif = 0.025
+        else if(bruto >= 20000001 && bruto <= 30000000) tarif = 0.03
+        else tarif = 0.035
+    }
+
+    // ================= KATEGORI B =================
+    if(kategori==="B"){
+        if(bruto >= 0 && bruto <= 6000000) tarif = 0
+        else if(bruto >= 6000001 && bruto <= 7000000) tarif = 0.0025
+        else if(bruto >= 7000001 && bruto <= 8000000) tarif = 0.005
+        else if(bruto >= 8000001 && bruto <= 9000000) tarif = 0.0075
+        else if(bruto >= 9000001 && bruto <= 11000000) tarif = 0.01
+        else if(bruto >= 11000001 && bruto <= 15000000) tarif = 0.015
+        else if(bruto >= 15000001 && bruto <= 20000000) tarif = 0.02
+        else if(bruto >= 20000001 && bruto <= 30000000) tarif = 0.025
+        else tarif = 0.03
+    }
+
+    // ================= KATEGORI C =================
+    if(kategori==="C"){
+        if(bruto >= 0 && bruto <= 7000000) tarif = 0
+        else if(bruto >= 7000001 && bruto <= 8000000) tarif = 0.0025
+        else if(bruto >= 8000001 && bruto <= 9000000) tarif = 0.005
+        else if(bruto >= 9000001 && bruto <= 10000000) tarif = 0.0075
+        else if(bruto >= 10000001 && bruto <= 12000000) tarif = 0.01
+        else if(bruto >= 12000001 && bruto <= 15000000) tarif = 0.015
+        else if(bruto >= 15000001 && bruto <= 20000000) tarif = 0.02
+        else if(bruto >= 20000001 && bruto <= 30000000) tarif = 0.025
+        else tarif = 0.03
+    }
+
+    return bruto * tarif
 }
 
 // ================= GENERATE =================
 async function generateTax(){
 
     let periode = document.getElementById("periode").value
+    if(!periode){alert("Pilih periode");return}
 
-    if(!periode){
-        alert("Pilih periode dulu")
-        return
-    }
+    let tahun = periode.split("-")[0]
 
-    const {data:payroll}=await supabase.from('payroll').select('*').eq('periode',periode)
-    const {data:master}=await supabase.from('master_payroll').select('*')
+    const {data:payroll} = await supabase
+        .from('payroll')
+        .select('*')
+        .like('periode',`${tahun}%`)
+
+    const {data:master} = await supabase
+        .from('master_payroll')
+        .select('*')
 
     hasil=[]
 
-    for(let p of payroll){
+    let group={}
 
-        let m = master.find(x=>x.nik==p.nik)
+    payroll.forEach(p=>{
+        if(!group[p.nik]) group[p.nik]=[]
+        group[p.nik].push(p)
+    })
 
-        let status = (m?.status_pajak||"TK/0").trim()
+    for(let nik in group){
 
-        let gapok = p.gaji_pokok||0
-        let tunjangan = p.tunjangan||0
-        let premi = (p.jkk||0)+(p.jkm||0)+(p.bpjs4||0)
-        let Irregular = p.irregular||0
+        let data = group[nik].sort((a,b)=>a.periode.localeCompare(b.periode))
 
-        let Penghasilan_bruto_bulanan = gapok+tunjangan+premi+thr
+        let akumBruto=0
+        let akumPensiun=0
+        let akumTER=0
+        let bulanKe=0
 
-        let akum_penghasilan_bruto = bruto
-        let biaya_jabatan = Math.min(akum_bruto*0.05,500000)
-        let iuran_pensiun = (p.jht||0)+(p.jp||0)
+        data.forEach(p=>{
 
-        let jumlah_neto = akum_bruto - biaya - pensiun
-        let ptkp = 54000000
-        let pkp = Math.max(neto - ptkp,0)
+            bulanKe++
 
-        let pph_ter = bruto * 0.01
-        let pph_21_final = pkp * 0.05
+            let m = master.find(x=>x.nik==p.nik)
+            let status=(m?.status_pajak||"TK/0").trim()
 
-        let selisih = final - ter
-        let ket = selisih < 0 ? "Lebih Potong" : "Kurang Potong"
+            let gapok = Number(p.gaji_pokok||0)
+            let tunjangan = Number(p.tunjangan||0)
+            let premi = Number((p.jkk||0)+(p.jkm||0)+(p.bpjs4||0))
+            let irregular = Number(p.irregular||0)
 
-        hasil.push({
-            periode,
-            nik:p.nik,
-            nama:m?.nama||"",
-            project:m?.project||"",
-            gapok,tunjangan,premi,irregular,
-            penghasilan_bruto_bulanan,akum_penghasilan_bruto,biaya_jabatan,iuran_pensiun,
-            jumlah_neto,ptkp,pkp,
-            pph_ter:ter,
-            pph21_final:final,
-            selisih,ket
+            let bruto = gapok+tunjangan+premi+irregular
+
+            akumBruto += bruto
+
+           // batas nominal per bulan (500rb, 1jt, dst)
+let batasBiaya = 0
+
+if(bulanKe === 1) batasBiaya = 500000
+else if(bulanKe === 2) batasBiaya = 1000000
+else if(bulanKe === 3) batasBiaya = 1500000
+else if(bulanKe === 4) batasBiaya = 2000000
+else if(bulanKe === 5) batasBiaya = 2500000
+else if(bulanKe === 6) batasBiaya = 3000000
+else if(bulanKe === 7) batasBiaya = 3500000
+else if(bulanKe === 8) batasBiaya = 4000000
+else if(bulanKe === 9) batasBiaya = 4500000
+else if(bulanKe === 10) batasBiaya = 5000000
+else if(bulanKe === 11) batasBiaya = 5500000
+else batasBiaya = 6000000
+
+// hitung biaya jabatan
+let biaya = akumBruto * 0.05
+
+// pakai batas nominal
+if(biaya > batasBiaya){
+    biaya = batasBiaya
+}
+
+            let pensiun=(p.jht||0)+(p.jp||0)
+            akumPensiun+=pensiun
+
+            let neto=akumBruto-biaya-akumPensiun
+            let ptkp=getPTKP(status)
+            let pkp=Math.max(neto-ptkp,0)
+
+            let ter=getTER(bruto,status)
+            akumTER+=ter
+
+           let progresifPajak = progresif(pkp)
+
+// 🔥 TER hanya muncul selain bulan 12
+let terFinal = p.periode.endsWith("-12") ? 0 : ter
+
+// 🔥 PPh21 sekarang = progresif (bukan TER)
+let pph21Final = progresifPajak
+
+let selisih = pph21Final - terFinal
+
+let keterangan = selisih > 0 ? "Kurang Potong" : "Lebih Potong"
+
+            hasil.push({
+                periode:p.periode,
+                nik,
+                nama:m?.nama||"",
+                project:m?.project||"",
+                bruto,
+                akum_bruto:akumBruto,
+                biaya_jabatan:biaya,
+                iuran_pensiun:akumPensiun,
+                neto,
+                ptkp,
+                pkp,
+                pph_ter:ter,
+                pph21_final:pph21Final,
+                selisih:pph21Final-ter,
+                keterangan: finalBulanan>ter?"Kurang Potong":"Lebih Potong"
+            })
         })
     }
 
@@ -226,60 +317,39 @@ function render(){
         <td>${x.nik}</td>
         <td>${x.nama}</td>
         <td>${x.project}</td>
-        <td>${x.gapok}</td>
-        <td>${x.tunjangan}</td>
-        <td>${x.premi}</td>
-        <td>${x.irregular}</td>
-        <td>${x.penghasilan_bruto_bulanan}</td>
-        <td>${x.akum_penghasilan_bruto}</td>
+        <td>${x.bruto}</td>
+        <td>${x.akum_bruto}</td>
         <td>${x.biaya_jabatan}</td>
         <td>${x.iuran_pensiun}</td>
-        <td>${x.jumlah_neto}</td>
+        <td>${x.neto}</td>
         <td>${x.ptkp}</td>
         <td>${x.pkp}</td>
         <td>${x.pph_ter}</td>
         <td>${x.pph21_final}</td>
         <td>${x.selisih}</td>
-        <td>${x.ket}</td>
+        <td>${x.keterangan}</td>
         </tr>`
     })
 }
 
 // ================= SAVE =================
 async function saveData(){
-
-    if(hasil.length==0){
-        alert("Generate dulu")
-        return
-    }
-
+    if(hasil.length==0){alert("Generate dulu");return}
     const {error}=await supabase.from('tax_engine').insert(hasil)
-
-    if(error){
-        alert("Gagal simpan")
-        console.log(error)
-    }else{
-        alert("Berhasil simpan")
-    }
+    if(error){alert("Gagal simpan");console.log(error)}
+    else alert("Berhasil simpan")
 }
 
 // ================= REPLACE =================
 async function replaceData(){
-
-    let periode = document.getElementById("periode").value
-
-    if(!periode){
-        alert("Pilih periode dulu")
-        return
-    }
-
+    let periode=document.getElementById("periode").value
     await supabase.from('tax_engine').delete().eq('periode',periode)
-
     await saveData()
 }
 
 // INIT
 setDefaultPeriode()
+
 </script>
 
 </body>
