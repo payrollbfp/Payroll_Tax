@@ -1,105 +1,19 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<title>Tax Engine</title>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-
-<style>
-body{
-    font-family:Arial;
-    padding:20px;
-    background:#f5f6fa;
-}
-button{
-    padding:8px 15px;
-    margin-right:10px;
-    cursor:pointer;
-}
-table{
-    width:100%;
-    border-collapse:collapse;
-    margin-top:20px;
-    background:#fff;
-}
-th,td{
-    border:1px solid #ddd;
-    padding:8px;
-    font-size:12px;
-}
-th{
-    background:#2f3640;
-    color:#fff;
-}
-</style>
-</head>
-
-<body>
-
-<h2>Tax Engine</h2>
-
-<div>
-    Periode :
-    <input type="month" id="periode">
-    <button onclick="generateTax()">Generate Tax</button>
-    <button onclick="saveTax()">Save</button>
-</div>
-
-<table id="table">
-<thead>
-<tr>
-<th>NIK</th>
-<th>Nama</th>
-<th>Project</th>
-<th>Gapok</th>
-<th>Tunjangan</th>
-<th>Premi</th>
-<th>THR</th>
-<th>Bruto</th>
-<th>Akum Bruto</th>
-<th>Biaya Jabatan</th>
-<th>JHT</th>
-<th>Neto</th>
-<th>PTKP</th>
-<th>PKP</th>
-<th>PPH TER</th>
-<th>PPH FINAL</th>
-<th>Selisih</th>
-<th>Keterangan</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-
 <script>
 
-// ==========================
-// SUPABASE (HANYA 1x)
-// ==========================
 const supabaseClient = supabase.createClient(
 "https://nwrbjbwjmkahjuuyizfq.supabase.co",
 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 );
 
-// ==========================
-// UTIL
-// ==========================
 function normalizeStatusPajak(status){
     return String(status || '').trim().toUpperCase().replace(/\s+/g,'');
 }
 
-// ==========================
-// PTKP
-// ==========================
 const PTKP_MAP = {
 "TK/0":54000000,"TK/1":58500000,"TK/2":63000000,"TK/3":67500000,
 "K/0":58500000,"K/1":63000000,"K/2":67500000,"K/3":72000000
 };
 
-// ==========================
-// TER RANGE
-// ==========================
 function getTER(bruto, status){
 
     status = (status||"").trim()
@@ -154,190 +68,196 @@ function getTER(bruto, status){
 }
 
 function getKategori(status){
-if(["TK/0","TK/1","K/0"].includes(status)) return "A";
-if(["TK/2","TK/3","K/1"].includes(status)) return "B";
-return "C";
+    if(["TK/0","TK/1","K/0"].includes(status)) return "A";
+    if(["TK/2","TK/3","K/1"].includes(status)) return "B";
+    return "C";
 }
 
 function getTarifTER(bruto,kategori){
-for(let r of TER_TABLE[kategori]){
-if(bruto>=r.min && bruto<=r.max) return r.rate;
-}
-return 0;
+    for(let r of TER_TABLE[kategori]){
+        if(bruto>=r.min && bruto<=r.max){
+            return r.rate;
+        }
+    }
+    return 0;
 }
 
-// ==========================
-// BIAYA JABATAN
-// ==========================
 function biayaJabatan(akum,bulan){
-return Math.min(akum*0.05,bulan*500000);
+    return Math.min(akum*0.05,bulan*500000);
 }
 
-// ==========================
-// PPH PROGRESIF
-// ==========================
 function pphProgresif(pkp){
 
-if(pkp<=0) return 0;
+    if(pkp<=0) return 0;
 
-if(pkp<=60000000) return pkp*0.05;
+    if(pkp<=60000000) return pkp*0.05;
 
-if(pkp<=250000000)
-return 60000000*0.05+(pkp-60000000)*0.15;
+    if(pkp<=250000000){
+        return 60000000*0.05+(pkp-60000000)*0.15;
+    }
 
-if(pkp<=500000000)
-return 60000000*0.05+190000000*0.15+(pkp-250000000)*0.25;
+    if(pkp<=500000000){
+        return 60000000*0.05+190000000*0.15+(pkp-250000000)*0.25;
+    }
 
-return 60000000*0.05+190000000*0.15+250000000*0.25+(pkp-500000000)*0.30;
+    return 60000000*0.05+190000000*0.15+250000000*0.25+(pkp-500000000)*0.30;
 }
 
-// ==========================
-// GENERATE TAX
-// ==========================
-let globalData=[];
+let globalData = [];
 
 async function generateTax(){
 
-const periode=document.getElementById("periode").value;
+    console.log("Generate jalan");
 
-const {data:payroll}=await supabaseClient.from("payroll").select("*").eq("periode",periode);
-const {data:master}=await supabaseClient.from("master_payroll").select("*");
+    const periode = document.getElementById("periode").value;
 
-let group={};
+    const { data: payroll } = await supabaseClient
+        .from("payroll")
+        .select("*")
+        .eq("periode", periode);
 
-payroll.forEach(r=>{
-if(!group[r.nik]) group[r.nik]=[];
-group[r.nik].push(r);
-});
+    const { data: master } = await supabaseClient
+        .from("master_payroll")
+        .select("*");
 
-let hasil=[];
+    let group = {};
 
-Object.keys(group).forEach(nik=>{
+    payroll.forEach(r=>{
+        if(!group[r.nik]) group[r.nik] = [];
+        group[r.nik].push(r);
+    });
 
-let rows=group[nik].sort((a,b)=>a.periode.localeCompare(b.periode));
+    let hasil = [];
 
-let akumBruto=0,akumJHT=0,akumTER=0,bulan=0;
+    Object.keys(group).forEach(nik=>{
 
-rows.forEach(r=>{
+        let rows = group[nik].sort((a,b)=>a.periode.localeCompare(b.periode));
 
-bulan++;
+        let akumBruto=0, akumJHT=0, akumTER=0, bulan=0;
 
-let m=master.find(x=>x.nik===nik)||{};
+        rows.forEach(r=>{
 
-let gapok=+r.gaji_pokok||0;
-let tunjangan=+r.tunjangan||0;
-let premi=(+r.jkk||0)+(+r.jkm||0)+(+r.bpjs4||0);
-let thr=+r.irregular||0;
+            bulan++;
 
-let bruto=gapok+tunjangan+premi+thr;
+            let m = master.find(x=>x.nik===nik) || {};
 
-akumBruto+=bruto;
+            let gapok = Number(r.gaji_pokok||0);
+            let tunjangan = Number(r.tunjangan||0);
+            let premi = Number(r.jkk||0)+Number(r.jkm||0)+Number(r.bpjs4||0);
+            let thr = Number(r.irregular||0);
 
-let bj=biayaJabatan(akumBruto,bulan);
+            let bruto = gapok+tunjangan+premi+thr;
 
-let jht=(+r.jp1||0)+(+r.jp2||0);
-akumJHT+=jht;
+            akumBruto += bruto;
 
-let neto=akumBruto-bj-akumJHT;
+            let bj = biayaJabatan(akumBruto,bulan);
 
-let status=normalizeStatusPajak(m.status_pajak);
-let ptkp=PTKP_MAP[status]||54000000;
+            let jht = Number(r.jp1||0)+Number(r.jp2||0);
+            akumJHT += jht;
 
-let pkpTahunan=Math.max(0,neto-ptkp);
-let pkpBulanan=pkpTahunan/12;
+            let neto = akumBruto - bj - akumJHT;
 
-let kategori=getKategori(status);
-let tarif=getTarifTER(bruto,kategori);
+            let status = normalizeStatusPajak(m.status_pajak);
+            let ptkp = PTKP_MAP[status] || 54000000;
 
-let ter=bruto*tarif;
+            let pkpTahunan = Math.max(0, neto - ptkp);
+            let pkpBulanan = pkpTahunan / 12;
 
-if(r.periode.endsWith("-12")) ter=0;
-else akumTER+=ter;
+            let kategori = getKategori(status);
+            let tarif = getTarifTER(bruto,kategori);
 
-let final=pphProgresif(pkpBulanan);
+            let ter = bruto * tarif;
 
-let selisih=final-akumTER;
-let ket=selisih<0?"Lebih Potong":"Kurang Potong";
+            if(r.periode.endsWith("-12")){
+                ter = 0;
+            } else {
+                akumTER += ter;
+            }
 
-hasil.push({
-nik,nama:m.nama,project:m.project,
-gapok,tunjangan,premi,thr,bruto,
-akumBruto,bj,akumJHT,neto,
-ptkp,pkp:pkpBulanan,
-pphTER:ter,pphFinal:final,
-selisih,ket,periode:r.periode
-});
+            let final = pphProgresif(pkpBulanan);
 
-});
+            let selisih = final - akumTER;
 
-});
+            let ket = selisih < 0 ? "Lebih Potong" : "Kurang Potong";
 
-globalData=hasil;
-renderTable(hasil);
+            hasil.push({
+                nik:nik,
+                nama:m.nama,
+                project:m.project,
+                gapok:gapok,
+                tunjangan:tunjangan,
+                premi:premi,
+                thr:thr,
+                bruto:bruto,
+                akumBruto:akumBruto,
+                bj:bj,
+                akumJHT:akumJHT,
+                neto:neto,
+                ptkp:ptkp,
+                pkp:pkpBulanan,
+                pphTER:ter,
+                pphFinal:final,
+                selisih:selisih,
+                ket:ket
+            });
 
+        });
+
+    });
+
+    globalData = hasil;
+    renderTable(hasil);
 }
 
-// ==========================
-// RENDER TABLE
-// ==========================
 function renderTable(data){
 
-let tbody=document.querySelector("#table tbody");
-tbody.innerHTML="";
+    const tbody = document.querySelector("#table tbody");
+    tbody.innerHTML = "";
 
-data.forEach(d=>{
-
-tbody.innerHTML+=`
-<tr>
-<td>${d.nik}</td>
-<td>${d.nama||""}</td>
-<td>${d.project||""}</td>
-<td>${d.gapok}</td>
-<td>${d.tunjangan}</td>
-<td>${d.premi}</td>
-<td>${d.thr}</td>
-<td>${d.bruto}</td>
-<td>${d.akumBruto}</td>
-<td>${d.bj}</td>
-<td>${d.akumJHT}</td>
-<td>${d.neto}</td>
-<td>${d.ptkp}</td>
-<td>${d.pkp}</td>
-<td>${d.pphTER}</td>
-<td>${d.pphFinal}</td>
-<td>${d.selisih}</td>
-<td>${d.ket}</td>
-</tr>
-`;
-
-});
-
+    data.forEach(d=>{
+        const row = `
+        <tr>
+            <td>${d.nik}</td>
+            <td>${d.nama||""}</td>
+            <td>${d.project||""}</td>
+            <td>${d.gapok}</td>
+            <td>${d.tunjangan}</td>
+            <td>${d.premi}</td>
+            <td>${d.thr}</td>
+            <td>${d.bruto}</td>
+            <td>${d.akumBruto}</td>
+            <td>${d.bj}</td>
+            <td>${d.akumJHT}</td>
+            <td>${d.neto}</td>
+            <td>${d.ptkp}</td>
+            <td>${d.pkp}</td>
+            <td>${d.pphTER}</td>
+            <td>${d.pphFinal}</td>
+            <td>${d.selisih}</td>
+            <td>${d.ket}</td>
+        </tr>
+        `;
+        tbody.innerHTML += row;
+    });
 }
 
-// ==========================
-// SAVE
-// ==========================
 async function saveTax(){
 
-if(globalData.length===0){
-alert("Generate dulu!");
-return;
-}
+    if(globalData.length === 0){
+        alert("Generate dulu!");
+        return;
+    }
 
-const {error}=await supabaseClient
-.from("tax_engine")
-.upsert(globalData);
+    const { error } = await supabaseClient
+        .from("tax_engine")
+        .upsert(globalData);
 
-if(error){
-console.error(error);
-alert("Gagal save");
-}else{
-alert("Berhasil save");
-}
-
+    if(error){
+        console.error(error);
+        alert("Gagal save");
+    }else{
+        alert("Berhasil save");
+    }
 }
 
 </script>
-
-</body>
-</html>
