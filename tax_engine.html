@@ -4,44 +4,19 @@
 <meta charset="UTF-8">
 <title>Tax Engine DJP</title>
 
+<!-- WAJIB: SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
 <style>
 body{margin:0;font-family:Segoe UI;background:#f4f6f9}
-
-/* HEADER */
-.header{
-    background:#1f2d3d;
-    color:white;
-    padding:15px 20px;
-    display:flex;
-    justify-content:space-between;
-}
-
-/* BUTTON */
-button{
-    padding:8px 14px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-    color:white;
-}
+.header{background:#1f2d3d;color:white;padding:15px 20px;display:flex;justify-content:space-between}
+button{padding:8px 14px;border:none;border-radius:6px;cursor:pointer;color:white}
 .btn-blue{background:#3498db}
 .btn-green{background:#27ae60}
 .btn-orange{background:#f39c12}
 .btn-grey{background:#6c757d}
-
-/* CONTENT */
 .container{padding:20px}
-
-/* ACTION */
-.action-bar{
-    display:flex;
-    gap:10px;
-    margin-bottom:15px;
-}
-
-/* TABLE */
+.action-bar{display:flex;gap:10px;margin-bottom:15px}
 table{width:100%;border-collapse:collapse;background:white}
 th{background:#34495e;color:white;padding:8px;font-size:12px}
 td{padding:6px;border-bottom:1px solid #ddd;font-size:12px;text-align:right}
@@ -52,17 +27,17 @@ td:nth-child(1),td:nth-child(2),td:nth-child(3){text-align:left}
 <body>
 
 <div class="header">
-    <h2>Tax Engine DJP</h2>
-    <button class="btn-grey" onclick="goBack()">Back</button>
+<h2>Tax Engine DJP</h2>
+<button class="btn-grey" onclick="window.location.href='dashboard.html'">Back</button>
 </div>
 
 <div class="container">
 
 <div class="action-bar">
-    <button class="btn-blue" onclick="generateTax()">Generate</button>
-    <input type="month" id="periode">
-    <button class="btn-green" onclick="saveData()">Save</button>
-    <button class="btn-orange" onclick="replaceData()">Replace</button>
+<button class="btn-blue" onclick="generateTax()">Generate</button>
+<input type="month" id="periode">
+<button class="btn-green" onclick="saveData()">Save</button>
+<button class="btn-orange" onclick="replaceData()">Replace</button>
 </div>
 
 <table id="tbl">
@@ -79,7 +54,7 @@ td:nth-child(1),td:nth-child(2),td:nth-child(3){text-align:left}
 <th>PTKP</th>
 <th>PKP</th>
 <th>TER</th>
-<th>PPh21</th>
+<th>PPh21 (Progresif)</th>
 <th>Selisih</th>
 <th>Keterangan</th>
 </tr>
@@ -89,7 +64,10 @@ td:nth-child(1),td:nth-child(2),td:nth-child(3){text-align:left}
 
 </div>
 
+<!-- ================= SCRIPT (HARUS DI BAWAH) ================= -->
 <script>
+
+console.log("SCRIPT READY");
 
 // ================= SUPABASE =================
 const supabase = window.supabase.createClient(
@@ -99,18 +77,13 @@ const supabase = window.supabase.createClient(
 
 let hasil = []
 
-// ================= BACK =================
-function goBack(){
-    window.location.href = "dashboard.html"
-}
-
 // ================= DEFAULT PERIODE =================
-function setDefaultPeriode(){
-    let d = new Date()
-    let y = d.getFullYear()
-    let m = (d.getMonth()+1).toString().padStart(2,'0')
-    document.getElementById("periode").value = `${y}-${m}`
-}
+(function(){
+    let d=new Date()
+    let y=d.getFullYear()
+    let m=(d.getMonth()+1).toString().padStart(2,'0')
+    document.getElementById("periode").value=`${y}-${m}`
+})()
 
 // ================= PTKP =================
 function getPTKP(status){
@@ -123,16 +96,16 @@ function getPTKP(status){
 
 // ================= PROGRESIF =================
 function progresif(pkp){
-    if(pkp<=0) return 0
-    let pajak=0
-    if(pkp>500000000){pajak+=(pkp-500000000)*0.30;pkp=500000000}
-    if(pkp>250000000){pajak+=(pkp-250000000)*0.25;pkp=250000000}
-    if(pkp>50000000){pajak+=(pkp-50000000)*0.15;pkp=50000000}
-    pajak+=pkp*0.05
-    return pajak
+    if(pkp<=0)return 0
+    let p=0
+    if(pkp>500000000){p+=(pkp-500000000)*0.30;pkp=500000000}
+    if(pkp>250000000){p+=(pkp-250000000)*0.25;pkp=250000000}
+    if(pkp>50000000){p+=(pkp-50000000)*0.15;pkp=50000000}
+    p+=pkp*0.05
+    return p
 }
 
-// ================= TER =================
+// ================= TER RANGE NOMINAL =================
 function getTER(bruto, status){
 
     status = (status||"").trim()
@@ -189,77 +162,49 @@ function getTER(bruto, status){
 // ================= GENERATE =================
 async function generateTax(){
 
-    let periode = document.getElementById("periode").value
+    console.log("GENERATE RUN");
+
+    let periode=document.getElementById("periode").value
     if(!periode){alert("Pilih periode");return}
 
-    let tahun = periode.split("-")[0]
+    let tahun=periode.split("-")[0]
 
-    const {data:payroll} = await supabase
-        .from('payroll')
-        .select('*')
-        .like('periode',`${tahun}%`)
-
-    const {data:master} = await supabase
-        .from('master_payroll')
-        .select('*')
+    const {data:payroll}=await supabase.from('payroll').select('*').like('periode',`${tahun}%`)
+    const {data:master}=await supabase.from('master_payroll').select('*')
 
     hasil=[]
 
     let group={}
-
     payroll.forEach(p=>{
-        if(!group[p.nik]) group[p.nik]=[]
+        if(!group[p.nik])group[p.nik]=[]
         group[p.nik].push(p)
     })
 
     for(let nik in group){
 
-        let data = group[nik].sort((a,b)=>a.periode.localeCompare(b.periode))
+        let data=group[nik].sort((a,b)=>a.periode.localeCompare(b.periode))
 
         let akumBruto=0
         let akumPensiun=0
-        let akumTER=0
         let bulanKe=0
 
         data.forEach(p=>{
 
             bulanKe++
 
-            let m = master.find(x=>x.nik==p.nik)
+            let m=master.find(x=>x.nik==p.nik)
             let status=(m?.status_pajak||"TK/0").trim()
 
-            let gapok = Number(p.gaji_pokok||0)
-            let tunjangan = Number(p.tunjangan||0)
-            let premi = Number((p.jkk||0)+(p.jkm||0)+(p.bpjs4||0))
-            let irregular = Number(p.irregular||0)
+            let bruto=(p.gaji_pokok||0)+(p.tunjangan||0)+(p.jkk||0)+(p.jkm||0)+(p.bpjs4||0)+(p.irregular||0)
 
-            let bruto = gapok+tunjangan+premi+irregular
+            akumBruto+=bruto
 
-            akumBruto += bruto
+            // biaya jabatan nominal
+            let batas = bulanKe*500000
+            if(batas>6000000) batas=6000000
 
-           // batas nominal per bulan (500rb, 1jt, dst)
-let batasBiaya = 0
-
-if(bulanKe === 1) batasBiaya = 500000
-else if(bulanKe === 2) batasBiaya = 1000000
-else if(bulanKe === 3) batasBiaya = 1500000
-else if(bulanKe === 4) batasBiaya = 2000000
-else if(bulanKe === 5) batasBiaya = 2500000
-else if(bulanKe === 6) batasBiaya = 3000000
-else if(bulanKe === 7) batasBiaya = 3500000
-else if(bulanKe === 8) batasBiaya = 4000000
-else if(bulanKe === 9) batasBiaya = 4500000
-else if(bulanKe === 10) batasBiaya = 5000000
-else if(bulanKe === 11) batasBiaya = 5500000
-else batasBiaya = 6000000
-
-// hitung biaya jabatan
-let biaya = akumBruto * 0.05
-
-// pakai batas nominal
-if(biaya > batasBiaya){
-    biaya = batasBiaya
-}
+            let biaya = akumBruto*0.05
+            if(biaya>batas) biaya=batas
 
             let pensiun=(p.jht||0)+(p.jp||0)
             akumPensiun+=pensiun
@@ -268,23 +213,13 @@ if(biaya > batasBiaya){
             let ptkp=getPTKP(status)
             let pkp=Math.max(neto-ptkp,0)
 
-            let ter=getTER(bruto,status)
-            akumTER+=ter
+            let ter = p.periode.endsWith("-12") ? 0 : getTER(bruto,status)
 
-           let progresifPajak = progresif(pkp)
+            let pph21 = progresif(pkp)
 
-// 🔥 TER hanya muncul selain bulan 12
-let terFinal = p.periode.endsWith("-12") ? 0 : ter
-
-// 🔥 PPh21 sekarang = progresif (bukan TER)
-let pph21Final = progresifPajak
-
-let selisih = pph21Final - terFinal
-
-let keterangan = selisih > 0 ? "Kurang Potong" : "Lebih Potong"
+            let selisih = pph21 - ter
 
             hasil.push({
-                periode:p.periode,
                 nik,
                 nama:m?.nama||"",
                 project:m?.project||"",
@@ -296,9 +231,9 @@ let keterangan = selisih > 0 ? "Kurang Potong" : "Lebih Potong"
                 ptkp,
                 pkp,
                 pph_ter:ter,
-                pph21_final:pph21Final,
-                selisih:pph21Final-ter,
-                keterangan: finalBulanan>ter?"Kurang Potong":"Lebih Potong"
+                pph21_final:pph21,
+                selisih,
+                keterangan: selisih>0?"Kurang Potong":"Lebih Potong"
             })
         })
     }
@@ -335,9 +270,8 @@ function render(){
 // ================= SAVE =================
 async function saveData(){
     if(hasil.length==0){alert("Generate dulu");return}
-    const {error}=await supabase.from('tax_engine').insert(hasil)
-    if(error){alert("Gagal simpan");console.log(error)}
-    else alert("Berhasil simpan")
+    await supabase.from('tax_engine').insert(hasil)
+    alert("Berhasil simpan")
 }
 
 // ================= REPLACE =================
@@ -346,9 +280,6 @@ async function replaceData(){
     await supabase.from('tax_engine').delete().eq('periode',periode)
     await saveData()
 }
-
-// INIT
-setDefaultPeriode()
 
 </script>
 
