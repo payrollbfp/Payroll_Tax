@@ -108,7 +108,7 @@ const BIAYA_JABATAN_TABLE = [
 
 function getTER(bruto, ptkp){
 
-    let kategori = getKategori(status);
+    let kategori = getKategori(ptkp);
     let table = TER_TABLE[kategori];
 
     for(let r of table){
