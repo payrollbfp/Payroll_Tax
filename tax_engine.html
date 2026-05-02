@@ -153,6 +153,14 @@ let pkp = Math.max(0, neto - ptkp);
 let ter=getTER(bruto,status);
 let final=pphProgresif(pkp);
 
+const unik = new Set();
+
+payroll.forEach(r => {
+
+let key = r.nik + "_" + r.periode;
+if(unik.has(key)) return;
+unik.add(key);
+    
 hasil.push({
 periode,
 nik:r.nik,
