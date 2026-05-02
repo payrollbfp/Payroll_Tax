@@ -224,8 +224,14 @@ const bulan = document.getElementById("bulan").value;
 const tahun = document.getElementById("tahun").value;
 
 const periode = `${tahun}-${bulan}`;
-let {data:payroll=[]}=await supabaseClient.from("payroll").eq("periode", periode);
-let {data:master=[]}=await supabaseClient.from("master_payroll").eq("periode", periode);
+const { data: payroll = [] } = await supabaseClient
+.from("payroll")
+.select("*")
+.eq("periode", periode);
+
+const { data: master = [] } = await supabaseClient
+.from("master_payroll")
+.select("*");
 
 let hasil=[];
 
@@ -316,7 +322,7 @@ async function saveTax(){
 let data=JSON.parse(localStorage.getItem("taxData")||"[]");
 if(!data.length) return alert("Generate dulu");
 
-await supabaseClient.from("tax_engine").upsert(data);
+await supabaseClient.from("tax_engine").insert(data);
 alert("Saved!");
 }
 
