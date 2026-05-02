@@ -20,7 +20,9 @@ th { background:#333; color:white; }
 
 <h2>Tax Engine</h2>
 
-<select id="periode"></select>
+<select id="bulan"></select>
+<select id="tahun"></select>
+
 <button onclick="generateTax()">Generate Tax</button>
 <button onclick="saveTax()">Save</button>
 
@@ -110,7 +112,6 @@ return "C";
 function getTER(bruto,status){
 let kategori = getKategori(status);
 let table = TER_TABLE[kategori];
-
 for(let r of table){
 if(bruto>=r.min && bruto<=r.max){
 return bruto * r.rate;
@@ -118,34 +119,34 @@ return bruto * r.rate;
 }
 return 0;
 }
-const BIAYA_JABATAN_TABLE = [
-{min:1, max:1, limit:500000},
-{min:2, max:2, limit:1000000},
-{min:3, max:3, limit:1500000},
-{min:4, max:4, limit:2000000},
-{min:5, max:5, limit:2500000},
-{min:6, max:6, limit:3000000},
-{min:7, max:7, limit:3500000},
-{min:8, max:8, limit:4000000},
-{min:9, max:9, limit:4500000},
-{min:10, max:10, limit:5000000},
-{min:11, max:11, limit:5500000},
-{min:12, max:12, limit:6000000}
-];
+
 // ================= BIAYA JABATAN RANGE =================
+const BIAYA_JABATAN_TABLE = [
+{min:1,max:1,limit:500000},
+{min:2,max:2,limit:1000000},
+{min:3,max:3,limit:1500000},
+{min:4,max:4,limit:2000000},
+{min:5,max:5,limit:2500000},
+{min:6,max:6,limit:3000000},
+{min:7,max:7,limit:3500000},
+{min:8,max:8,limit:4000000},
+{min:9,max:9,limit:4500000},
+{min:10,max:10,limit:5000000},
+{min:11,max:11,limit:5500000},
+{min:12,max:12,limit:6000000}
+];
+
 function biayaJabatan(akumBruto, bulanKe){
-
-    let limit = 6000000; // default max tahunan
-
-    for(let r of BIAYA_JABATAN_TABLE){
-        if(bulanKe >= r.min && bulanKe <= r.max){
-            limit = r.limit;
-            break;
-        }
-    }
-
-    return Math.min(akumBruto * 0.05, limit);
+let limit = 6000000;
+for(let r of BIAYA_JABATAN_TABLE){
+if(bulanKe>=r.min && bulanKe<=r.max){
+limit = r.limit;
+break;
 }
+}
+return Math.min(akumBruto * 0.05, limit);
+}
+
 // ================= PROGRESIF =================
 function pphProgresif(pkp){
 if(pkp<=0) return 0;
@@ -155,34 +156,70 @@ if(pkp<=500000000) return 60000000*0.05+190000000*0.15+(pkp-250000000)*0.25;
 return 60000000*0.05+190000000*0.15+250000000*0.25+(pkp-500000000)*0.30;
 }
 
-// ================= LOAD PERIODE =================
-async function loadPeriode(){
-const { data=[] } = await supabaseClient.from("payroll").select("periode");
-const unique=[...new Set(data.map(d=>d.periode))].sort().reverse();
-const select=document.getElementById("periode");
-select.innerHTML="";
-unique.forEach(p=>{
+// ================= LOAD FILTER =================
+function loadFilter(){
+
+const bulanList=["01","02","03","04","05","06","07","08","09","10","11","12"];
+const bulanEl=document.getElementById("bulan");
+bulanList.forEach(b=>{
 let opt=document.createElement("option");
-opt.value=p;
-opt.textContent=p;
-select.appendChild(opt);
+opt.value=b;
+opt.textContent=b;
+bulanEl.appendChild(opt);
 });
+
+supabaseClient.from("payroll").select("periode").then(({data=[]})=>{
+const tahunSet=new Set(data.map(d=>d.periode.split("-")[0]));
+const tahunEl=document.getElementById("tahun");
+[...tahunSet].sort().reverse().forEach(t=>{
+let opt=document.createElement("option");
+opt.value=t;
+opt.textContent=t;
+tahunEl.appendChild(opt);
+});
+});
+
 }
 
 // ================= GENERATE =================
 async function generateTax(){
 
-const periode=document.getElementById("periode").value;
-if(!periode) return alert("Pilih periode!");
+const bulan=document.getElementById("bulan").value;
+const tahun=document.getElementById("tahun").value;
 
-const { data: payrollData=[] } = await supabaseClient.from("payroll").select("*").eq("periode",periode);
-const { data: masterData=[] } = await supabaseClient.from("master_payroll").select("*");
+if(!bulan || !tahun) return alert("Pilih bulan & tahun!");
+
+const periode=`${tahun}-${bulan}`;
+
+const { data: payrollData=[] } = await supabaseClient
+.from("payroll")
+.select("*")
+.lte("periode", periode)
+.order("periode",{ascending:true});
+
+const { data: masterData=[] } = await supabaseClient
+.from("master_payroll")
+.select("*");
+
+let group={};
+payrollData.forEach(r=>{
+if(!group[r.nik]) group[r.nik]=[];
+group[r.nik].push(r);
+});
 
 let hasil=[];
 
-payrollData.forEach(r=>{
+Object.keys(group).forEach(nik=>{
 
-let m=masterData.find(x=>x.nik===r.nik)||{};
+let rows=group[nik].sort((a,b)=>a.periode.localeCompare(b.periode));
+
+let akumBruto=0, akumJHT=0, bulanKe=0;
+
+rows.forEach(r=>{
+
+bulanKe++;
+
+let m=masterData.find(x=>x.nik===nik)||{};
 
 let gapok=Number(r.gaji_pokok||0);
 let tunjangan=Number(r.tunjangan||0);
@@ -191,10 +228,14 @@ let irregular=Number(r.irregular||0);
 
 let bruto=gapok+tunjangan+premi+irregular;
 
-let jht=Number(r.jp1||0)+Number(r.jp2||0);
-let bj=biayaJabatan(bruto);
+akumBruto+=bruto;
 
-let neto=bruto-bj-jht;
+let jht=Number(r.jp1||0)+Number(r.jp2||0);
+akumJHT+=jht;
+
+let bj=biayaJabatan(akumBruto,bulanKe);
+
+let neto=akumBruto-bj-akumJHT;
 
 let status=normalizeStatusPajak(m.status_pajak);
 let ptkp=PTKP_MAP[status]||54000000;
@@ -207,15 +248,18 @@ let final=pphProgresif(pkp);
 let selisih=final-ter;
 let ket=selisih<0?"Lebih Potong":"Kurang Potong";
 
+if(r.periode===periode){
+
+if(!hasil.some(x=>x.nik===nik && x.periode===periode)){
 hasil.push({
-nik:r.nik,
+nik,
 nama:m.nama,
 project:m.project,
 gapok,tunjangan,premi,irregular,
 bruto,
-akumBruto:bruto,
+akumBruto,
 bj,
-akumJHT:jht,
+akumJHT,
 neto,
 ptkp,
 pkp,
@@ -225,11 +269,17 @@ selisih,
 ket,
 periode
 });
+}
+
+}
+
+});
 
 });
 
 globalData=hasil;
 renderTable(hasil);
+
 }
 
 // ================= RENDER =================
@@ -270,7 +320,7 @@ else alert("Berhasil save");
 }
 
 // ================= INIT =================
-document.addEventListener("DOMContentLoaded",loadPeriode);
+document.addEventListener("DOMContentLoaded",loadFilter);
 
 </script>
 
