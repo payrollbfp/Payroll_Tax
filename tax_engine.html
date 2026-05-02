@@ -130,8 +130,14 @@ const {data:master=[]}=await supabaseClient
 .from("master_payroll").select("*");
 
 let hasil=[];
+const unik = new Set();
 
 payroll.forEach(r=>{
+
+let key = r.nik + "_" + r.periode;
+if(unik.has(key)) return;
+unik.add(key);
+
 let m=master.find(x=>x.nik===r.nik)||{};
 
 let gapok=+r.gaji_pokok||0;
@@ -140,7 +146,8 @@ let premi=(+r.jkk||0)+(+r.jkm||0)+(+r.bpjs4||0);
 let irregular=+r.irregular||0;
 
 let bruto=gapok+tunjangan+premi+irregular;
-let akumbruto += brutoBulan;
+let akumbruto = bruto;
+
 let jht=(+r.jp1||0)+(+r.jp2||0);
 
 let bj=biayaJabatan(bruto);
@@ -148,19 +155,12 @@ let neto=bruto-bj-jht;
 
 let status=normalizeStatus(m.status_pajak);
 let ptkp=PTKP_MAP[status]||54000000;
+
 let pkp = Math.max(0, neto - ptkp);
 
 let ter=getTER(bruto,status);
 let final=pphProgresif(pkp);
 
-const unik = new Set();
-
-payroll.forEach(r => {
-
-let key = r.nik + "_" + r.periode;
-if(unik.has(key)) return;
-unik.add(key);
-    
 hasil.push({
 periode,
 nik:r.nik,
@@ -168,17 +168,18 @@ nama:m.nama,
 project:m.project,
 gapok,tunjangan,premi,irregular,
 bruto,
-akumBruto:bruto,
+akumbruto,
 biaya_jabatan:bj,
-iuran_jht:jht,
+iuran_pensiun:jht,
 neto,
 ptkp,
 pkp,
 pph_ter:ter,
 pph21_final:final,
 selisih:final-ter,
-ket:(final-ter)>0?"Kurang":"Lebih"
+keterangan:(final-ter)>0?"Kurang":"Lebih"
 });
+
 });
 
 localStorage.setItem("taxData",JSON.stringify(hasil));
@@ -200,16 +201,16 @@ tbody.innerHTML+=`
 <td>${d.premi}</td>
 <td>${d.irregular}</td>
 <td>${d.bruto}</td>
-<td>${d.akumBruto}</td>
-<td>${d.bj}</td>
-<td>${d.akumJHT}</td>
+<td>${d.akumbruto}</td>
+<td>${d.biaya_jabatan}</td>
+<td>${d.iuran_pensiun}</td>
 <td>${d.neto}</td>
 <td>${d.ptkp}</td>
 <td>${d.pkp}</td>
-<td>${d.pphTER}</td>
-<td>${d.pphFinal}</td>
+<td>${d.pph_ter}</td>
+<td>${d.pph21_final}</td>
 <td>${d.selisih}</td>
-<td>${d.ket}</td>
+<td>${d.keterangan}</td>
 </tr>`;
 });
 }
