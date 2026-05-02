@@ -1,4 +1,148 @@
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tax Engine</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<style>
+body{
+  font-family:Arial,sans-serif;
+  background:#eef2f7;
+  margin:0;
+}
+
+/* ===== NAVBAR ===== */
+.topbar{
+  background:#1e293b;
+  color:#fff;
+  padding:16px 24px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.topbar h1{
+  margin:0;
+  font-size:22px;
+}
+.topbar button{
+  background:#64748b;
+  color:#fff;
+  border:none;
+  padding:8px 14px;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+/* ===== WRAPPER ===== */
+.wrapper{
+  padding:20px;
+}
+
+/* ===== CONTAINER ===== */
+.container{
+  max-width:100%;
+  margin:auto;
+  background:#fff;
+  padding:20px;
+  border-radius:14px;
+  box-shadow:0 4px 12px rgba(0,0,0,.08);
+}
+
+/* ===== BUTTONS ===== */
+.header{
+  display:flex;
+  gap:10px;
+  margin-bottom:20px;
+}
+button{
+  padding:10px 16px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
+}
+.generate{background:#3b82f6;color:#fff;}
+.save{background:#22c55e;color:#fff;}
+.back{background:#94a3b8;color:#fff;}
+
+/* ===== TABLE ===== */
+.table-wrap{
+  overflow:auto;
+  max-height:75vh;
+  border-radius:10px;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:12px;
+}
+th,td{
+  border:1px solid #e5e7eb;
+  padding:8px;
+  text-align:right;
+  white-space:nowrap;
+}
+th{
+  background:#334155;
+  color:#fff;
+  position:sticky;
+  top:0;
+}
+td{
+  background:#fff;
+}
+tr:nth-child(even) td{
+  background:#f8fafc;
+}
+
+td:first-child,
+td:nth-child(2),
+td:nth-child(3),
+th:first-child,
+th:nth-child(2),
+th:nth-child(3){
+  text-align:left;
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<div class="topbar">
+  <h1>Payroll System</h1>
+  <button onclick="history.back()">Back</button>
+</div>
+
+<div class="wrapper">
+<div class="container">
+
+  <div class="header">
+    <button class="generate" onclick="generateTaxEngine()">Generate Tax</button>
+    <button class="save" onclick="saveTaxEngine()">Save</button>
+    <button class="back" onclick="history.back()">Back</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>NIK</th><th>Nama</th><th>Project</th><th>Gapok</th><th>Tunjangan</th><th>Premi Asuransi</th><th>Irregular</th>
+          <th>Penghasilan Bruto Bulan</th><th>Akumulasi Penghasilan Bruto</th><th>Akumulasi Biaya Jabatan</th>
+          <th>Iuran Pensiun/JHT</th><th>Jumlah Neto</th><th>PTKP</th><th>PKP</th><th>PPH TER</th>
+          <th>PPH 21 FINAL</th><th>Selisih Pajak</th><th>Keterangan</th>
+        </tr>
+      </thead>
+      <tbody id="taxTableBody"></tbody>
+    </table>
+  </div>
+
+</div>
+</div>
+
+
 <script>
 
 const supabaseClient = supabase.createClient(
