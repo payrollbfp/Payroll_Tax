@@ -92,7 +92,19 @@ A:[[0,5400000,0],[5400001,5650000,0.0025],[5650001,5950000,0.005],[5950001,63000
 ]
   };
 
+function getTER(bruto, status){
 
+    let kategori = getKategori(status);
+    let table = TER_TABLE[kategori];
+
+    for(let r of table){
+        if(bruto >= r.min && bruto <= r.max){
+            return Math.round(bruto * r.rate);
+        }
+    }
+
+    return 0;
+}
 function biayaJabatan(akumBruto, bulanKe){
 let limit = 6000000;
 for(let r of BIAYA_JABATAN_TABLE){
