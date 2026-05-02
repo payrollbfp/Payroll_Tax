@@ -250,24 +250,26 @@ let ter=getTER(bruto,status);
 let final=pphProgresif(pkp);
 
 hasil.push({
-periode: row.periode
-nik,
-nama:m.nama,
-project:m.project,
-gapok,tunjangan,premi,irregular,
-bruto,
-akumBruto:bruto,
-bj,
-akumJHT:jht,
-neto,
-ptkp,
-pkp,
-pphTER:ter,
-pphFinal:final,
-selisih:final-ter,
-ket:(final-ter)>0?"Kurang":"Lebih"
+    periode: r.periode,
+    nik: r.nik,
+    nama: m.nama,
+    project: m.project,
+    gapok,
+    tunjangan,
+    premi,
+    irregular,
+    bruto,
+    akumBruto: bruto,
+    bj,
+    akumJHT: jht,
+    neto,
+    ptkp,
+    pkp,
+    pphTER: ter,
+    pphFinal: final,
+    selisih: final - ter,
+    ket: (final - ter) > 0 ? "Kurang" : "Lebih"
 });
-
 });
 
 localStorage.setItem("taxData",JSON.stringify(hasil));
