@@ -6,7 +6,18 @@ const supabaseClient = supabase.createClient(
 );
 
 function normalizeStatusPajak(status){
-    return String(status || '').trim().toUpperCase().replace(/\s+/g,'');
+    return String(status || '')
+        .trim()
+        .toUpperCase()
+        .replace(/\s+/g,'')
+        .replace(/^TK0$/,'TK/0')
+        .replace(/^TK1$/,'TK/1')
+        .replace(/^TK2$/,'TK/2')
+        .replace(/^TK3$/,'TK/3')
+        .replace(/^K0$/,'K/0')
+        .replace(/^K1$/,'K/1')
+        .replace(/^K2$/,'K/2')
+        .replace(/^K3$/,'K/3');
 }
 
 const PTKP_MAP = {
@@ -106,7 +117,9 @@ function pphProgresif(pkp){
 let globalData = [];
 
 async function generateTax(){
-
+console.log("Periode:", periode);
+console.log("Payroll:", payroll);
+console.log("Master:", master);
     console.log("Generate jalan");
 
     const periode = document.getElementById("periode").value;
@@ -126,7 +139,14 @@ async function generateTax(){
         if(!group[r.nik]) group[r.nik] = [];
         group[r.nik].push(r);
     });
+const { data: payroll = [] } = await supabaseClient
+    .from("payroll")
+    .select("*")
+    .eq("periode", periode);
 
+const { data: master = [] } = await supabaseClient
+    .from("master_payroll")
+    .select("*");
     let hasil = [];
 
     Object.keys(group).forEach(nik=>{
@@ -163,10 +183,7 @@ async function generateTax(){
             let pkpTahunan = Math.max(0, neto - ptkp);
             let pkpBulanan = pkpTahunan / 12;
 
-            let kategori = getKategori(status);
-            let tarif = getTarifTER(bruto,kategori);
-
-            let ter = bruto * tarif;
+           let ter = getTER(bruto, status);
 
             if(r.periode.endsWith("-12")){
                 ter = 0;
