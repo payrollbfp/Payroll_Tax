@@ -124,7 +124,10 @@ if(!bulan||!tahun) return alert("Pilih periode");
 const periode = `${tahun}-${bulan}`;
 
 const {data:payroll=[]}=await supabaseClient
-.from("payroll").select("*").eq("periode",periode);
+.from("payroll")
+.select("*")
+.lte("periode", periode)
+.order("periode", { ascending: true });
 
 const {data:master=[]}=await supabaseClient
 .from("master_payroll").select("*");
