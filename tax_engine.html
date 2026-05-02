@@ -1,425 +1,278 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tax Engine</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <style>
-body{
-  font-family:Arial,sans-serif;
-  background:#eef2f7;
-  margin:0;
-}
-
-/* ===== NAVBAR ===== */
-.topbar{
-  background:#1e293b;
-  color:#fff;
-  padding:16px 24px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-.topbar h1{
-  margin:0;
-  font-size:22px;
-}
-.topbar button{
-  background:#64748b;
-  color:#fff;
-  border:none;
-  padding:8px 14px;
-  border-radius:8px;
-  cursor:pointer;
-}
-
-/* ===== WRAPPER ===== */
-.wrapper{
-  padding:20px;
-}
-
-/* ===== CONTAINER ===== */
-.container{
-  max-width:100%;
-  margin:auto;
-  background:#fff;
-  padding:20px;
-  border-radius:14px;
-  box-shadow:0 4px 12px rgba(0,0,0,.08);
-}
-
-/* ===== BUTTONS ===== */
-.header{
-  display:flex;
-  gap:10px;
-  margin-bottom:20px;
-}
-button{
-  padding:10px 16px;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
-  font-weight:bold;
-}
-.generate{background:#3b82f6;color:#fff;}
-.save{background:#22c55e;color:#fff;}
-.back{background:#94a3b8;color:#fff;}
-
-/* ===== TABLE ===== */
-.table-wrap{
-  overflow:auto;
-  max-height:75vh;
-  border-radius:10px;
-}
-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:12px;
-}
-th,td{
-  border:1px solid #e5e7eb;
-  padding:8px;
-  text-align:right;
-  white-space:nowrap;
-}
-th{
-  background:#334155;
-  color:#fff;
-  position:sticky;
-  top:0;
-}
-td{
-  background:#fff;
-}
-tr:nth-child(even) td{
-  background:#f8fafc;
-}
-
-td:first-child,
-td:nth-child(2),
-td:nth-child(3),
-th:first-child,
-th:nth-child(2),
-th:nth-child(3){
-  text-align:left;
-}
+body { font-family: Arial; padding:20px; }
+button { padding:10px 15px; margin:5px; cursor:pointer; }
+table { border-collapse: collapse; width:100%; margin-top:20px; }
+th, td { border:1px solid #ccc; padding:8px; font-size:12px; }
+th { background:#333; color:white; }
 </style>
 </head>
 
 <body>
 
-<!-- NAVBAR -->
-<div class="topbar">
-  <h1>Payroll System</h1>
-  <button onclick="history.back()">Back</button>
-</div>
+<h2>Tax Engine</h2>
 
-<div class="wrapper">
-<div class="container">
+<select id="periode"></select>
+<button onclick="generateTax()">Generate Tax</button>
+<button onclick="saveTax()">Save</button>
 
-  <div class="header">
-    <button class="generate" onclick="generateTaxEngine()">Generate Tax</button>
-    <button class="save" onclick="saveTaxEngine()">Save</button>
-    <button class="back" onclick="history.back()">Back</button>
-  </div>
-
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>NIK</th><th>Nama</th><th>Project</th><th>Gapok</th><th>Tunjangan</th><th>Premi Asuransi</th><th>Irregular</th>
-          <th>Penghasilan Bruto Bulan</th><th>Akumulasi Penghasilan Bruto</th><th>Akumulasi Biaya Jabatan</th>
-          <th>Iuran Pensiun/JHT</th><th>Jumlah Neto</th><th>PTKP</th><th>PKP</th><th>PPH TER</th>
-          <th>PPH 21 FINAL</th><th>Selisih Pajak</th><th>Keterangan</th>
-        </tr>
-      </thead>
-      <tbody id="taxTableBody"></tbody>
-    </table>
-  </div>
-
-</div>
-</div>
-
+<table id="table">
+<thead>
+<tr>
+<th>NIK</th><th>Nama</th><th>Project</th>
+<th>Gapok</th><th>Tunjangan</th><th>Premi</th><th>Irregular</th>
+<th>Bruto</th><th>Akumulasi Bruto</th><th>Biaya Jabatan</th>
+<th>JHT</th><th>Neto</th><th>PTKP</th><th>PKP</th>
+<th>PPH TER</th><th>PPH FINAL</th><th>Selisih</th><th>Keterangan</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
 
 <script>
 
+// ================= SUPABASE =================
 const supabaseClient = supabase.createClient(
 "https://nwrbjbwjmkahjuuyizfq.supabase.co",
 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmJqYndqbWthaGp1dXlpemZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MjM4OTIsImV4cCI6MjA5MjQ5OTg5Mn0.n67pONlkoMqZguyoTwQQFJ0VBRfPaIVuVlPGxsajaGA"
 );
 
+let globalData = [];
+
+// ================= NORMALIZE =================
 function normalizeStatusPajak(status){
-    return String(status || '')
-        .trim()
-        .toUpperCase()
-        .replace(/\s+/g,'')
-        .replace(/^TK0$/,'TK/0')
-        .replace(/^TK1$/,'TK/1')
-        .replace(/^TK2$/,'TK/2')
-        .replace(/^TK3$/,'TK/3')
-        .replace(/^K0$/,'K/0')
-        .replace(/^K1$/,'K/1')
-        .replace(/^K2$/,'K/2')
-        .replace(/^K3$/,'K/3');
+    return String(status||"").trim().toUpperCase()
+    .replace(/\s+/g,'')
+    .replace(/^TK0$/,'TK/0').replace(/^TK1$/,'TK/1')
+    .replace(/^TK2$/,'TK/2').replace(/^TK3$/,'TK/3')
+    .replace(/^K0$/,'K/0').replace(/^K1$/,'K/1')
+    .replace(/^K2$/,'K/2').replace(/^K3$/,'K/3');
 }
 
+// ================= PTKP =================
 const PTKP_MAP = {
 "TK/0":54000000,"TK/1":58500000,"TK/2":63000000,"TK/3":67500000,
 "K/0":58500000,"K/1":63000000,"K/2":67500000,"K/3":72000000
 };
 
-function getTER(bruto, status){
-
-    status = (status||"").trim()
-
-    let kategori = "C"
-    if(["TK/0","TK/1","K/0"].includes(status)) kategori="A"
-    else if(["TK/2","TK/3","K/1"].includes(status)) kategori="B"
-
-    let tarif = 0
-
-    // ================= KATEGORI A =================
-    if(kategori==="A"){
-        if(bruto >= 0 && bruto <= 5000000) tarif = 0
-        else if(bruto >= 5000001 && bruto <= 6000000) tarif = 0.0025
-        else if(bruto >= 6000001 && bruto <= 7000000) tarif = 0.005
-        else if(bruto >= 7000001 && bruto <= 8000000) tarif = 0.0075
-        else if(bruto >= 8000001 && bruto <= 9000000) tarif = 0.01
-        else if(bruto >= 9000001 && bruto <= 10000000) tarif = 0.015
-        else if(bruto >= 10000001 && bruto <= 15000000) tarif = 0.02
-        else if(bruto >= 15000001 && bruto <= 20000000) tarif = 0.025
-        else if(bruto >= 20000001 && bruto <= 30000000) tarif = 0.03
-        else tarif = 0.035
-    }
-
-    // ================= KATEGORI B =================
-    if(kategori==="B"){
-        if(bruto >= 0 && bruto <= 6000000) tarif = 0
-        else if(bruto >= 6000001 && bruto <= 7000000) tarif = 0.0025
-        else if(bruto >= 7000001 && bruto <= 8000000) tarif = 0.005
-        else if(bruto >= 8000001 && bruto <= 9000000) tarif = 0.0075
-        else if(bruto >= 9000001 && bruto <= 11000000) tarif = 0.01
-        else if(bruto >= 11000001 && bruto <= 15000000) tarif = 0.015
-        else if(bruto >= 15000001 && bruto <= 20000000) tarif = 0.02
-        else if(bruto >= 20000001 && bruto <= 30000000) tarif = 0.025
-        else tarif = 0.03
-    }
-
-    // ================= KATEGORI C =================
-    if(kategori==="C"){
-        if(bruto >= 0 && bruto <= 7000000) tarif = 0
-        else if(bruto >= 7000001 && bruto <= 8000000) tarif = 0.0025
-        else if(bruto >= 8000001 && bruto <= 9000000) tarif = 0.005
-        else if(bruto >= 9000001 && bruto <= 10000000) tarif = 0.0075
-        else if(bruto >= 10000001 && bruto <= 12000000) tarif = 0.01
-        else if(bruto >= 12000001 && bruto <= 15000000) tarif = 0.015
-        else if(bruto >= 15000001 && bruto <= 20000000) tarif = 0.02
-        else if(bruto >= 20000001 && bruto <= 30000000) tarif = 0.025
-        else tarif = 0.03
-    }
-
-    return bruto * tarif
-}
+// ================= TER RANGE =================
+const TER_TABLE = {
+A:[
+{min:0,max:5000000,rate:0},
+{min:5000001,max:6000000,rate:0.0025},
+{min:6000001,max:7000000,rate:0.005},
+{min:7000001,max:8000000,rate:0.0075},
+{min:8000001,max:9000000,rate:0.01},
+{min:9000001,max:10000000,rate:0.015},
+{min:10000001,max:15000000,rate:0.02},
+{min:15000001,max:20000000,rate:0.025},
+{min:20000001,max:30000000,rate:0.03},
+{min:30000001,max:999999999,rate:0.035}
+],
+B:[
+{min:0,max:6000000,rate:0},
+{min:6000001,max:7000000,rate:0.0025},
+{min:7000001,max:8000000,rate:0.005},
+{min:8000001,max:9000000,rate:0.0075},
+{min:9000001,max:11000000,rate:0.01},
+{min:11000001,max:15000000,rate:0.015},
+{min:15000001,max:20000000,rate:0.02},
+{min:20000001,max:30000000,rate:0.025},
+{min:30000001,max:999999999,rate:0.03}
+],
+C:[
+{min:0,max:7000000,rate:0},
+{min:7000001,max:8000000,rate:0.0025},
+{min:8000001,max:9000000,rate:0.005},
+{min:9000001,max:10000000,rate:0.0075},
+{min:10000001,max:12000000,rate:0.01},
+{min:12000001,max:15000000,rate:0.015},
+{min:15000001,max:20000000,rate:0.02},
+{min:20000001,max:30000000,rate:0.025},
+{min:30000001,max:999999999,rate:0.03}
+]
+};
 
 function getKategori(status){
-    if(["TK/0","TK/1","K/0"].includes(status)) return "A";
-    if(["TK/2","TK/3","K/1"].includes(status)) return "B";
-    return "C";
+if(["TK/0","TK/1","K/0"].includes(status)) return "A";
+if(["TK/2","TK/3","K/1"].includes(status)) return "B";
+return "C";
 }
 
-function getTarifTER(bruto,kategori){
-    for(let r of TER_TABLE[kategori]){
-        if(bruto>=r.min && bruto<=r.max){
-            return r.rate;
+function getTER(bruto,status){
+let kategori = getKategori(status);
+let table = TER_TABLE[kategori];
+
+for(let r of table){
+if(bruto>=r.min && bruto<=r.max){
+return bruto * r.rate;
+}
+}
+return 0;
+}
+const BIAYA_JABATAN_TABLE = [
+{min:1, max:1, limit:500000},
+{min:2, max:2, limit:1000000},
+{min:3, max:3, limit:1500000},
+{min:4, max:4, limit:2000000},
+{min:5, max:5, limit:2500000},
+{min:6, max:6, limit:3000000},
+{min:7, max:7, limit:3500000},
+{min:8, max:8, limit:4000000},
+{min:9, max:9, limit:4500000},
+{min:10, max:10, limit:5000000},
+{min:11, max:11, limit:5500000},
+{min:12, max:12, limit:6000000}
+];
+// ================= BIAYA JABATAN RANGE =================
+function biayaJabatan(akumBruto, bulanKe){
+
+    let limit = 6000000; // default max tahunan
+
+    for(let r of BIAYA_JABATAN_TABLE){
+        if(bulanKe >= r.min && bulanKe <= r.max){
+            limit = r.limit;
+            break;
         }
     }
-    return 0;
-}
 
-function biayaJabatan(akum,bulan){
-    return Math.min(akum*0.05,bulan*500000);
+    return Math.min(akumBruto * 0.05, limit);
 }
-
+// ================= PROGRESIF =================
 function pphProgresif(pkp){
-
-    if(pkp<=0) return 0;
-
-    if(pkp<=60000000) return pkp*0.05;
-
-    if(pkp<=250000000){
-        return 60000000*0.05+(pkp-60000000)*0.15;
-    }
-
-    if(pkp<=500000000){
-        return 60000000*0.05+190000000*0.15+(pkp-250000000)*0.25;
-    }
-
-    return 60000000*0.05+190000000*0.15+250000000*0.25+(pkp-500000000)*0.30;
+if(pkp<=0) return 0;
+if(pkp<=60000000) return pkp*0.05;
+if(pkp<=250000000) return 60000000*0.05+(pkp-60000000)*0.15;
+if(pkp<=500000000) return 60000000*0.05+190000000*0.15+(pkp-250000000)*0.25;
+return 60000000*0.05+190000000*0.15+250000000*0.25+(pkp-500000000)*0.30;
 }
 
-let globalData = [];
+// ================= LOAD PERIODE =================
+async function loadPeriode(){
+const { data=[] } = await supabaseClient.from("payroll").select("periode");
+const unique=[...new Set(data.map(d=>d.periode))].sort().reverse();
+const select=document.getElementById("periode");
+select.innerHTML="";
+unique.forEach(p=>{
+let opt=document.createElement("option");
+opt.value=p;
+opt.textContent=p;
+select.appendChild(opt);
+});
+}
 
+// ================= GENERATE =================
 async function generateTax(){
-console.log("Periode:", periode);
-console.log("Payroll:", payroll);
-console.log("Master:", master);
-    console.log("Generate jalan");
 
-    const periode = document.getElementById("periode").value;
+const periode=document.getElementById("periode").value;
+if(!periode) return alert("Pilih periode!");
 
-    const { data: payroll } = await supabaseClient
-        .from("payroll")
-        .select("*")
-        .eq("periode", periode);
+const { data: payrollData=[] } = await supabaseClient.from("payroll").select("*").eq("periode",periode);
+const { data: masterData=[] } = await supabaseClient.from("master_payroll").select("*");
 
-    const { data: master } = await supabaseClient
-        .from("master_payroll")
-        .select("*");
+let hasil=[];
 
-    let group = {};
+payrollData.forEach(r=>{
 
-    payroll.forEach(r=>{
-        if(!group[r.nik]) group[r.nik] = [];
-        group[r.nik].push(r);
-    });
-const { data: payroll = [] } = await supabaseClient
-    .from("payroll")
-    .select("*")
-    .eq("periode", periode);
+let m=masterData.find(x=>x.nik===r.nik)||{};
 
-const { data: master = [] } = await supabaseClient
-    .from("master_payroll")
-    .select("*");
-    let hasil = [];
+let gapok=Number(r.gaji_pokok||0);
+let tunjangan=Number(r.tunjangan||0);
+let premi=Number(r.jkk||0)+Number(r.jkm||0)+Number(r.bpjs4||0);
+let irregular=Number(r.irregular||0);
 
-    Object.keys(group).forEach(nik=>{
+let bruto=gapok+tunjangan+premi+irregular;
 
-        let rows = group[nik].sort((a,b)=>a.periode.localeCompare(b.periode));
+let jht=Number(r.jp1||0)+Number(r.jp2||0);
+let bj=biayaJabatan(bruto);
 
-        let akumBruto=0, akumJHT=0, akumTER=0, bulan=0;
+let neto=bruto-bj-jht;
 
-        rows.forEach(r=>{
+let status=normalizeStatusPajak(m.status_pajak);
+let ptkp=PTKP_MAP[status]||54000000;
 
-            bulan++;
+let pkp=neto-ptkp
 
-            let m = master.find(x=>x.nik===nik) || {};
+let ter=getTER(bruto,status);
+let final=pphProgresif(pkp);
 
-            let gapok = Number(r.gaji_pokok||0);
-            let tunjangan = Number(r.tunjangan||0);
-            let premi = Number(r.jkk||0)+Number(r.jkm||0)+Number(r.bpjs4||0);
-            let thr = Number(r.irregular||0);
+let selisih=final-ter;
+let ket=selisih<0?"Lebih Potong":"Kurang Potong";
 
-            let bruto = gapok+tunjangan+premi+thr;
+hasil.push({
+nik:r.nik,
+nama:m.nama,
+project:m.project,
+gapok,tunjangan,premi,irregular,
+bruto,
+akumBruto:bruto,
+bj,
+akumJHT:jht,
+neto,
+ptkp,
+pkp,
+pphTER:ter,
+pphFinal:final,
+selisih,
+ket,
+periode
+});
 
-            akumBruto += bruto;
+});
 
-            let bj = biayaJabatan(akumBruto,bulan);
-
-            let jht = Number(r.jp1||0)+Number(r.jp2||0);
-            akumJHT += jht;
-
-            let neto = akumBruto - bj - akumJHT;
-
-            let status = normalizeStatusPajak(m.status_pajak);
-            let ptkp = PTKP_MAP[status] || 54000000;
-
-            let pkpTahunan = Math.max(0, neto - ptkp);
-            let pkpBulanan = pkpTahunan / 12;
-
-           let ter = getTER(bruto, status);
-
-            if(r.periode.endsWith("-12")){
-                ter = 0;
-            } else {
-                akumTER += ter;
-            }
-
-            let final = pphProgresif(pkpBulanan);
-
-            let selisih = final - akumTER;
-
-            let ket = selisih < 0 ? "Lebih Potong" : "Kurang Potong";
-
-            hasil.push({
-                nik:nik,
-                nama:m.nama,
-                project:m.project,
-                gapok:gapok,
-                tunjangan:tunjangan,
-                premi:premi,
-                thr:thr,
-                bruto:bruto,
-                akumBruto:akumBruto,
-                bj:bj,
-                akumJHT:akumJHT,
-                neto:neto,
-                ptkp:ptkp,
-                pkp:pkpBulanan,
-                pphTER:ter,
-                pphFinal:final,
-                selisih:selisih,
-                ket:ket
-            });
-
-        });
-
-    });
-
-    globalData = hasil;
-    renderTable(hasil);
+globalData=hasil;
+renderTable(hasil);
 }
 
+// ================= RENDER =================
 function renderTable(data){
-
-    const tbody = document.querySelector("#table tbody");
-    tbody.innerHTML = "";
-
-    data.forEach(d=>{
-        const row = `
-        <tr>
-            <td>${d.nik}</td>
-            <td>${d.nama||""}</td>
-            <td>${d.project||""}</td>
-            <td>${d.gapok}</td>
-            <td>${d.tunjangan}</td>
-            <td>${d.premi}</td>
-            <td>${d.thr}</td>
-            <td>${d.bruto}</td>
-            <td>${d.akumBruto}</td>
-            <td>${d.bj}</td>
-            <td>${d.akumJHT}</td>
-            <td>${d.neto}</td>
-            <td>${d.ptkp}</td>
-            <td>${d.pkp}</td>
-            <td>${d.pphTER}</td>
-            <td>${d.pphFinal}</td>
-            <td>${d.selisih}</td>
-            <td>${d.ket}</td>
-        </tr>
-        `;
-        tbody.innerHTML += row;
-    });
+const tbody=document.querySelector("#table tbody");
+tbody.innerHTML="";
+data.forEach(d=>{
+tbody.innerHTML+=`
+<tr>
+<td>${d.nik}</td>
+<td>${d.nama||""}</td>
+<td>${d.project||""}</td>
+<td>${d.gapok}</td>
+<td>${d.tunjangan}</td>
+<td>${d.premi}</td>
+<td>${d.irregular}</td>
+<td>${d.bruto}</td>
+<td>${d.akumBruto}</td>
+<td>${d.bj}</td>
+<td>${d.akumJHT}</td>
+<td>${d.neto}</td>
+<td>${d.ptkp}</td>
+<td>${d.pkp}</td>
+<td>${d.pphTER}</td>
+<td>${d.pphFinal}</td>
+<td>${d.selisih}</td>
+<td>${d.ket}</td>
+</tr>`;
+});
 }
 
+// ================= SAVE =================
 async function saveTax(){
-
-    if(globalData.length === 0){
-        alert("Generate dulu!");
-        return;
-    }
-
-    const { error } = await supabaseClient
-        .from("tax_engine")
-        .upsert(globalData);
-
-    if(error){
-        console.error(error);
-        alert("Gagal save");
-    }else{
-        alert("Berhasil save");
-    }
+if(globalData.length===0) return alert("Generate dulu!");
+const { error } = await supabaseClient.from("tax_engine").upsert(globalData);
+if(error){ console.error(error); alert("Gagal save"); }
+else alert("Berhasil save");
 }
+
+// ================= INIT =================
+document.addEventListener("DOMContentLoaded",loadPeriode);
 
 </script>
+
+</body>
+</html>
