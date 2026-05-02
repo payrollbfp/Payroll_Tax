@@ -220,8 +220,8 @@ tahun.innerHTML+=`<option>${y}</option>`;
 // ================= GENERATE =================
 async function generateTax(){
 
-let {data:payroll=[]}=await supabaseClient.from("payroll")..eq("periode", periode);
-let {data:master=[]}=await supabaseClient.from("master_payroll")..eq("periode", periode);
+let {data:payroll=[]}=await supabaseClient.from("payroll").eq("periode", periode);
+let {data:master=[]}=await supabaseClient.from("master_payroll").eq("periode", periode);
 
 let hasil=[];
 
