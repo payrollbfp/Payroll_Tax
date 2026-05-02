@@ -220,6 +220,10 @@ tahun.innerHTML+=`<option>${y}</option>`;
 // ================= GENERATE =================
 async function generateTax(){
 
+const bulan = document.getElementById("bulan").value;
+const tahun = document.getElementById("tahun").value;
+
+const periode = `${tahun}-${bulan}`;
 let {data:payroll=[]}=await supabaseClient.from("payroll").eq("periode", periode);
 let {data:master=[]}=await supabaseClient.from("master_payroll").eq("periode", periode);
 
