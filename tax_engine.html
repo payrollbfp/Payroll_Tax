@@ -58,7 +58,9 @@ const supabaseClient = supabase.createClient(
 );
 
 // ================= HELPER =================
-function goBack(){ window.location.href="dashboard.html"; }
+function goBack(){ 
+    window.location.href = "/Payroll_Tax/dashboard.html"; 
+}
 
 function normalizeStatus(s){
     return (s||"TK/0").toUpperCase().replace(/\s/g,'');
