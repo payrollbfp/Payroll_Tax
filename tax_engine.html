@@ -135,6 +135,7 @@ const {data:master=[]}=await supabaseClient
 
 let hasil=[];
 let akumulasiMap = {}; // 🔥 kunci fix
+let akumulasiNetoMap = {};    
 
 payroll.forEach(r=>{
 
@@ -156,12 +157,18 @@ let akumbruto = akumulasiMap[r.nik]; // ✅ ini yang benar
 let jht=(+r.jp1||0)+(+r.jp2||0);
 
 let bj=biayaJabatan(bruto);
-let neto=bruto-bj-jht;
+let neto = bruto - bj - jht;
+
+// 🔥 akumulasi neto
+if(!akumulasiNetoMap[r.nik]) akumulasiNetoMap[r.nik]=0;
+akumulasiNetoMap[r.nik] += neto;
+
+let akumNeto = akumulasiNetoMap[r.nik];
 
 let status=normalizeStatus(m.status_pajak);
 let ptkp=PTKP_MAP[status]||54000000;
 
-let pkp = Math.max(0, neto - ptkp);
+let pkp = Math.max(0, akumNeto - ptkp);
 
 let ter=getTER(bruto,status);
 let final=pphProgresif(pkp);
