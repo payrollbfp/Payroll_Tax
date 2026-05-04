@@ -193,7 +193,7 @@ let jht = akumulasiJHTMap[r.nik];
     let maxBJ = getMaxBiayaJabatan(bulanMap[r.nik]);
     let bjAkumulasi = Math.min(bjAkumulasiRaw, maxBJ);
 let bj=bjAkumulasi
-let neto = bruto - bj - jht;
+let neto = akumbruto - bj - jht;
 
 // 🔥 akumulasi neto
 if(!akumulasiNetoMap[r.nik]) akumulasiNetoMap[r.nik]=0;
