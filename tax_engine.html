@@ -156,9 +156,43 @@ akumulasiMap[r.nik] += bruto;
 
 let akumbruto = akumulasiMap[r.nik]; // ✅ ini yang benar
 
-let jht=(+r.jp1||0)+(+r.jp2||0);
+// ✅ JHT = jht2 + jp1 (SESUAI KOREKSI)
+let jhtBulanan = (+r.jht2 || 0) + (+r.jp1 || 0);
 
-let bj=biayaJabatan(bruto);
+// ✅ akumulasi JHT
+if(!akumulasiJHTMap[r.nik]) akumulasiJHTMap[r.nik] = 0;
+akumulasiJHTMap[r.nik] += jhtBulanan;
+
+let jht = akumulasiJHTMap[r.nik];
+
+    function getMaxBiayaJabatan(bulan){
+
+    const ranges = [
+        [1, 500000],
+        [2, 1000000],
+        [3, 1500000],
+        [4, 2000000],
+        [5, 2500000],
+        [6, 3000000],
+        [7, 3500000],
+        [8, 4000000],
+        [9, 4500000],
+        [10, 5000000],
+        [11, 5500000],
+        [12, 6000000]
+    ];
+
+    for(let r of ranges){
+        if(bulan === r[0]) return r[1];
+    }
+
+    // fallback kalau lebih dari 12 bulan
+    return bulan * 500000;
+}
+    let bjAkumulasiRaw = akumBruto * 0.05;
+    let maxBJ = getMaxBiayaJabatan(bulanMap[r.nik]);
+    let bjAkumulasi = Math.min(bjAkumulasiRaw, maxBJ);
+let bj=bjAkumulasi
 let neto = bruto - bj - jht;
 
 // 🔥 akumulasi neto
