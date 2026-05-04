@@ -1,3 +1,54 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tax Engine</title>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+<style>
+body{margin:0;font-family:Segoe UI;background:#f4f6f9;}
+.header{background:#243447;color:white;padding:20px;display:flex;justify-content:space-between;align-items:center;}
+.btn{padding:10px 15px;border:none;border-radius:6px;cursor:pointer;color:white;}
+.blue{background:#3b82f6;} .green{background:#10b981;} .gray{background:#64748b;}
+.container{padding:20px;}
+select{padding:8px;margin-right:10px;}
+table{width:100%;border-collapse:collapse;margin-top:20px;background:white;}
+th,td{padding:8px;border:1px solid #ddd;font-size:12px;}
+th{background:#1e293b;color:white;}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+    <h2>Tax Engine</h2>
+    <button class="btn gray" onclick="goBack()">Back</button>
+</div>
+
+<div class="container">
+<select id="bulan"></select>
+<select id="tahun"></select>
+
+<button class="btn blue" onclick="generateTax()">Generate</button>
+<button class="btn green" onclick="saveTax()">Save</button>
+
+<table id="table">
+<thead>
+<tr>
+<th>NIK</th><th>Nama</th><th>Project</th>
+<th>Gapok</th><th>Tunjangan</th><th>Premi</th><th>Irregular</th>
+<th>Bruto</th><th>Akumulasi Bruto</th><th>Biaya Jabatan</th>
+<th>JHT</th><th>Neto</th><th>PTKP</th><th>PKP</th>
+<th>PPH TER</th><th>PPH FINAL</th><th>Selisih</th><th>Keterangan</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+    
+
 <script>
 
 // ================= SUPABASE =================
