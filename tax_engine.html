@@ -1,53 +1,3 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tax Engine</title>
-
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-
-<style>
-body{margin:0;font-family:Segoe UI;background:#f4f6f9;}
-.header{background:#243447;color:white;padding:20px;display:flex;justify-content:space-between;align-items:center;}
-.btn{padding:10px 15px;border:none;border-radius:6px;cursor:pointer;color:white;}
-.blue{background:#3b82f6;} .green{background:#10b981;} .gray{background:#64748b;}
-.container{padding:20px;}
-select{padding:8px;margin-right:10px;}
-table{width:100%;border-collapse:collapse;margin-top:20px;background:white;}
-th,td{padding:8px;border:1px solid #ddd;font-size:12px;}
-th{background:#1e293b;color:white;}
-</style>
-</head>
-
-<body>
-
-<div class="header">
-    <h2>Tax Engine</h2>
-    <button class="btn gray" onclick="goBack()">Back</button>
-</div>
-
-<div class="container">
-<select id="bulan"></select>
-<select id="tahun"></select>
-
-<button class="btn blue" onclick="generateTax()">Generate</button>
-<button class="btn green" onclick="saveTax()">Save</button>
-
-<table id="table">
-<thead>
-<tr>
-<th>NIK</th><th>Nama</th><th>Project</th>
-<th>Gapok</th><th>Tunjangan</th><th>Premi</th><th>Irregular</th>
-<th>Bruto</th><th>Akumulasi Bruto</th><th>Biaya Jabatan</th>
-<th>JHT</th><th>Neto</th><th>PTKP</th><th>PKP</th>
-<th>PPH TER</th><th>PPH FINAL</th><th>Selisih</th><th>Keterangan</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-</div>
-
 <script>
 
 // ================= SUPABASE =================
@@ -76,11 +26,7 @@ const PTKP_MAP={
 };
 
 // ================= TER =================
-const TER_TABLE={
-A:[[0,5400000,0],[5400001,5650000,0.0025],[5650001,5950000,0.005],[5950001,6300000,0.0075],[6300001,6750000,0.01],[6750001,7500000,0.0125],[7500001,8550000,0.015],[8550001,9650000,0.0175],[9650001,10050000,0.02],[10050001,10350000,0.0225],[10350001,10700000,0.025],[10700001,11050000,0.03],[11050001,11600000,0.035],[11600001,12500000,0.04],[12500001,13750000,0.05],[13750001,15100000,0.06],[15100001,16950000,0.07],[16950001,19750000,0.08],[19750001,24150000,0.09],[24150001,26450000,0.10],[26450001,28000000,0.11],[28000001,30000000,0.12],[30000001,Infinity,0.13]],
-B:[[0,6200000,0],[6200001,6500000,0.0025],[6500001,6850000,0.005],[6850001,7300000,0.0075],[7300001,9200000,0.01],[9200001,10750000,0.015],[10750001,11250000,0.02],[11250001,11600000,0.025],[11600001,12600000,0.03],[12600001,13600000,0.04],[13600001,14950000,0.05],[14950001,16400000,0.06],[16400001,18450000,0.07],[18450001,21850000,0.08],[21850001,26000000,0.09],[26000001,27700000,0.10],[27700001,29350000,0.11],[29350001,30000000,0.12],[30000001,Infinity,0.13]],
-C:[[0,6600000,0],[6600001,6950000,0.0025],[6950001,7350000,0.005],[7350001,7800000,0.0075],[7800001,8850000,0.01],[8850001,9800000,0.0125],[9800001,10950000,0.015],[10950001,11200000,0.0175],[11200001,12050000,0.02],[12050001,12950000,0.03],[12950001,14150000,0.04],[14150001,15550000,0.05],[15550001,17050000,0.06],[17050001,19500000,0.07],[19500001,22700000,0.08],[22700001,26600000,0.09],[26600001,28100000,0.10],[28100001,30000000,0.11],[30000001,Infinity,0.12]]
-};
+const TER_TABLE={ ...SAMA PERSIS... };
 
 function getTER(bruto,status){
     let table=TER_TABLE[getTERCategory(status)];
@@ -109,7 +55,7 @@ let b=i.toString().padStart(2,"0");
 bulan.innerHTML+=`<option value="${b}">${b}</option>`;
 }
 for(let y=2023;y<=2030;y++){
-tahun.innerHTML+=`<option>${y}</option>`;
+tahun.innerHTML+=`<option value="${y}">${y}</option>`;
 }
 }
 
@@ -163,8 +109,9 @@ let pkp = Math.max(0, neto - ptkp);
 
 let ter=getTER(bruto,status);
 let final=pphProgresif(pkp);
+
 if(r.periode === periode){
-   
+
 hasil.push({
 periode,
 nik:r.nik,
@@ -184,8 +131,14 @@ selisih:final-ter,
 keterangan:(final-ter)>0?"Kurang":"Lebih"
 });
 
+}
+
+});
+
+// 🔥 setelah loop
 localStorage.setItem("taxData",JSON.stringify(hasil));
 render(hasil);
+
 }
 
 // ================= RENDER =================
@@ -225,13 +178,11 @@ if(!data.length) return alert("Generate dulu");
 
 let periode = data[0].periode;
 
-// 🔥 hapus dulu data lama
 await supabaseClient
 .from("tax_engine")
 .delete()
 .eq("periode", periode);
 
-// 🔥 baru insert
 const { error } = await supabaseClient
 .from("tax_engine")
 .insert(data);
@@ -251,6 +202,3 @@ if(saved) render(JSON.parse(saved));
 });
 
 </script>
-
-</body>
-</html>
