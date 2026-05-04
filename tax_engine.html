@@ -146,6 +146,10 @@ let hasil=[];
 let akumulasiMap = {}; // 🔥 kunci fix
 let akumulasiNetoMap = {};    
 
+    let hasil=[];
+let akumulasiMap = {};
+let akumulasiNetoMap = {};
+let akumulasiJHTMap = {}; // ✅ WAJIB TAMBAH INI
 payrollAll.forEach(r=>{
 
 let m=master.find(x=>x.nik===r.nik)||{};
@@ -196,8 +200,9 @@ let jht = akumulasiJHTMap[r.nik];
     // fallback kalau lebih dari 12 bulan
     return bulan * 500000;
 }
-    let bjAkumulasiRaw = akumBruto * 0.05;
-    let maxBJ = getMaxBiayaJabatan(bulanMap[r.nik]);
+    let bulanNum = parseInt(r.periode.split("-")[1]);
+let bjAkumulasiRaw = akumbruto * 0.05;
+let maxBJ = getMaxBiayaJabatan(bulanNum);
     let bjAkumulasi = Math.min(bjAkumulasiRaw, maxBJ);
 let bj=bjAkumulasi
 let neto = akumbruto - bj - jht;
