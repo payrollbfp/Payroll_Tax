@@ -141,10 +141,7 @@ const {data:payrollNow=[]}=await supabaseClient
 
 const {data:master=[]}=await supabaseClient
 .from("master_payroll").select("*");
-
-let hasil=[];
-let akumulasiMap = {}; // 🔥 kunci fix
-let akumulasiNetoMap = {};    
+   
 
     let hasil=[];
 let akumulasiMap = {};
