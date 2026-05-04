@@ -126,11 +126,18 @@ if(!bulan||!tahun) return alert("Pilih periode");
 
 const periode = `${tahun}-${bulan}`;
 
-const {data:payroll=[]}=await supabaseClient
+// 🔥 1. untuk akumulasi
+const {data:payrollAll=[]}=await supabaseClient
 .from("payroll")
 .select("*")
 .lte("periode", periode)
-.order("periode", { ascending: true });
+.order("periode",{ascending:true});
+
+// 🔥 2. untuk tampilan
+const {data:payrollNow=[]}=await supabaseClient
+.from("payroll")
+.select("*")
+.eq("periode", periode);
 
 const {data:master=[]}=await supabaseClient
 .from("master_payroll").select("*");
@@ -139,7 +146,7 @@ let hasil=[];
 let akumulasiMap = {}; // 🔥 kunci fix
 let akumulasiNetoMap = {};    
 
-payroll.forEach(r=>{
+payrollAll.forEach(r=>{
 
 let m=master.find(x=>x.nik===r.nik)||{};
 
@@ -210,7 +217,9 @@ let ter=getTER(bruto,status);
 let final=pphProgresif(pkp);
 
 // 🔥 hanya push periode terpilih
-if(r.periode === periode){
+let current = payrollNow.find(x => x.nik === r.nik);
+
+if(current && r.periode === periode){
 
 hasil.push({
 periode,
