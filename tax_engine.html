@@ -134,13 +134,9 @@ const {data:master=[]}=await supabaseClient
 .from("master_payroll").select("*");
 
 let hasil=[];
-const unik = new Set();
+let akumulasiMap = {}; // 🔥 kunci fix
 
 payroll.forEach(r=>{
-
-let key = r.nik + "_" + r.periode;
-if(unik.has(key)) return;
-unik.add(key);
 
 let m=master.find(x=>x.nik===r.nik)||{};
 
@@ -150,7 +146,12 @@ let premi=(+r.jkk||0)+(+r.jkm||0)+(+r.bpjs4||0);
 let irregular=+r.irregular||0;
 
 let bruto=gapok+tunjangan+premi+irregular;
-let akumbruto = bruto;
+
+// 🔥 AKUMULASI PER NIK
+if(!akumulasiMap[r.nik]) akumulasiMap[r.nik]=0;
+akumulasiMap[r.nik] += bruto;
+
+let akumbruto = akumulasiMap[r.nik]; // ✅ ini yang benar
 
 let jht=(+r.jp1||0)+(+r.jp2||0);
 
@@ -165,6 +166,7 @@ let pkp = Math.max(0, neto - ptkp);
 let ter=getTER(bruto,status);
 let final=pphProgresif(pkp);
 
+// 🔥 hanya push periode terpilih
 if(r.periode === periode){
 
 hasil.push({
@@ -174,7 +176,7 @@ nama:m.nama,
 project:m.project,
 gapok,tunjangan,premi,irregular,
 bruto,
-akumbruto,
+akumbruto, // ✅ sudah akumulasi
 biaya_jabatan:bj,
 iuran_pensiun:jht,
 neto,
