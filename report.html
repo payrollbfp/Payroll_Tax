@@ -151,11 +151,12 @@ map[t.nik].bruto = Math.max(map[t.nik].bruto||0, +t.akumbruto||0);
 map[t.nik].jht = Math.max(map[t.nik].jht||0, +t.iuran_pensiun||0);
 
 // biaya jabatan dari bulan terakhir
-if(t.periode === map[t.nik].bulanTerakhir){
-map[t.nik].bj = +t.biaya_jabatan||0;
-map[t.nik].final = +t.pph21_final||0;
+if(t.periode === lastMonthMap[t.nik]){
+    map[t.nik].final = +t.pph21_final||0;
+    map[t.nik].bj = +t.biaya_jabatan||0;
+    map[t.nik].neto = +t.neto||0;
+    map[t.nik].pkp = +t.pkp||0;
 }
-
 // akumulasi TER
 map[t.nik].ter = (map[t.nik].ter||0) + (+t.pph_ter||0);
 });
@@ -169,9 +170,9 @@ let m = master.find(x=>x.nik===nik)||{};
 let d = map[nik];
 
 let pengurang = (d.bj||0)+(d.jht||0);
-let neto = (d.bruto||0) - pengurang;
+let neto = d.neto || 0;
 let ptkp = getPTKP(m.status_pajak);
-let pkp = Math.max(0, neto - ptkp);
+let pkp = d.pkp || 0;
 
 pphData.push({
 nik,
