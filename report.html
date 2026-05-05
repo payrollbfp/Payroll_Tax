@@ -137,12 +137,9 @@ map[r.nik].gapok+=+r.gaji_pokok||0;
 map[r.nik].tunjangan+=+r.tunjangan||0;
 map[r.nik].irregular+=+r.irregular||0;
 
-if(r.periode > map[r.nik].bulanTerakhir){
-map[r.nik].bulanTerakhir = r.periode;
-}
-});
-let lastMonthMap = {};
 
+let lastMonthMap = {};
+    
 // 🔥 tentukan bulan terakhir per NIK dari tax_engine
 tax.forEach(t=>{
 if(!lastMonthMap[t.nik] || t.periode > lastMonthMap[t.nik]){
