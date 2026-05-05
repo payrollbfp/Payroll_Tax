@@ -1,10 +1,116 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Report Payroll</title>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+body{font-family:Segoe UI;background:#f4f6f9;margin:0}
+.header{background:#1e293b;color:white;padding:15px}
+.container{padding:20px}
+button{padding:8px 12px;margin-right:10px;border:none;border-radius:6px;color:white;cursor:pointer}
+.blue{background:#3b82f6}
+.green{background:#10b981}
+table{width:100%;border-collapse:collapse;margin-top:20px;background:white}
+th,td{border:1px solid #ddd;padding:6px;font-size:12px}
+th{background:#334155;color:white}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+<h2>Report Payroll & PPh21</h2>
+</div>
+
+<div class="container">
+
+<h3>Report Master Data</h3>
+<button class="blue" onclick="loadMaster()">Load</button>
+<button class="green" onclick="exportMaster()">Export Excel</button>
+<table id="masterTable">
+<thead>
+<tr>
+<th>NIK</th><th>Nama</th><th>Project</th><th>Status Pajak</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<hr>
+
+<h3>Report PPh 21 Tahunan</h3>
+<select id="tahun"></select>
+<button class="blue" onclick="loadPPH()">Load</button>
+<button class="green" onclick="exportPPH()">Export Excel</button>
+
+<table id="pphTable">
+<thead>
+<tr>
+<th>NIK</th><th>Nama</th>
+<th>Gapok</th><th>Tunjangan</th><th>Premi</th><th>Irregular</th>
+<th>Bruto</th><th>Biaya Jabatan</th><th>JHT</th>
+<th>Pengurang</th><th>Neto</th><th>PTKP</th><th>PKP</th>
+<th>PPH Final</th><th>PPH Dipotong</th><th>Selisih</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+</div>
+
+<script>
+
+const supabaseClient = supabase.createClient(
+"https://nwrbjbwjmkahjuuyizfq.supabase.co",
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmJqYndqbWthaGp1dXlpemZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MjM4OTIsImV4cCI6MjA5MjQ5OTg5Mn0.n67pONlkoMqZguyoTwQQFJ0VBRfPaIVuVlPGxsajaGA"
+);
+
+// ================= INIT =================
+document.addEventListener("DOMContentLoaded",()=>{
+for(let y=2023;y<=2030;y++){
+tahun.innerHTML+=`<option>${y}</option>`;
+}
+});
+
+// ================= MASTER =================
+let masterData=[];
+
+async function loadMaster(){
+const {data=[]}=await supabaseClient.from("master_payroll").select("*");
+masterData=data;
+
+let tbody=document.querySelector("#masterTable tbody");
+tbody.innerHTML="";
+
+data.forEach(d=>{
+tbody.innerHTML+=`
+<tr>
+<td>${d.nik}</td>
+<td>${d.nama}</td>
+<td>${d.project}</td>
+<td>${d.status_pajak}</td>
+</tr>`;
+});
+}
+
+function exportMaster(){
+let ws = XLSX.utils.json_to_sheet(masterData);
+let wb = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb, ws, "Master");
+XLSX.writeFile(wb, "master_data.xlsx");
+}
+
+// ================= PPH =================
+let pphData=[];
+
 async function loadPPH(){
 
-const tahun=document.getElementById("tahun").value;
-const filterNik=document.getElementById("filterNik").value.toLowerCase();
-const filterProject=document.getElementById("filterProject").value.toLowerCase();
+const tahun = document.getElementById("tahun").value;
 
-// ================= LOAD DATA =================
 const {data:payroll=[]}=await supabaseClient
 .from("payroll")
 .select("*")
@@ -16,79 +122,60 @@ const {data:tax=[]}=await supabaseClient
 .like("periode",`${tahun}-%`);
 
 const {data:master=[]}=await supabaseClient
-.from("master_payroll")
-.select("*");
+.from("master_payroll").select("*");
 
-// ================= MAP =================
+// 🔥 grouping per NIK
 let map={};
 
-// 🔥 payroll (akumulasi)
 payroll.forEach(r=>{
-
-if(!map[r.nik]){
-map[r.nik]={
-gapok:0,
-tunjangan:0,
-irregular:0,
+if(!map[r.nik]) map[r.nik]={
+gapok:0,tunjangan:0,irregular:0,
 bulanTerakhir:""
 };
-}
 
-map[r.nik].gapok += +r.gaji_pokok || 0;
-map[r.nik].tunjangan += +r.tunjangan || 0;
-map[r.nik].irregular += +r.irregular || 0;
+map[r.nik].gapok+=+r.gaji_pokok||0;
+map[r.nik].tunjangan+=+r.tunjangan||0;
+map[r.nik].irregular+=+r.irregular||0;
 
 if(r.periode > map[r.nik].bulanTerakhir){
 map[r.nik].bulanTerakhir = r.periode;
 }
-
 });
 
-// 🔥 tax_engine (pakai nilai jadi, JANGAN hitung ulang)
+// 🔥 ambil dari tax_engine
 tax.forEach(t=>{
-
 if(!map[t.nik]) return;
 
-// premi → SUM
-map[t.nik].premi = (map[t.nik].premi || 0) + (+t.premi || 0);
+map[t.nik].premi = (map[t.nik].premi||0) + (+t.premi||0);
+map[t.nik].bruto = Math.max(map[t.nik].bruto||0, +t.akumbruto||0);
+map[t.nik].jht = Math.max(map[t.nik].jht||0, +t.iuran_pensiun||0);
 
-// TER → SUM
-map[t.nik].ter = (map[t.nik].ter || 0) + (+t.pph_ter || 0);
-
-// ambil nilai terbesar (akumulasi terakhir)
-map[t.nik].bruto = Math.max(map[t.nik].bruto || 0, +t.akumbruto || 0);
-map[t.nik].jht = Math.max(map[t.nik].jht || 0, +t.iuran_pensiun || 0);
-
-// 🔥 ambil BULAN TERAKHIR
+// biaya jabatan dari bulan terakhir
 if(t.periode === map[t.nik].bulanTerakhir){
-
-map[t.nik].bj = +t.biaya_jabatan || 0;
-map[t.nik].neto = +t.neto || 0;
-map[t.nik].pkp = +t.pkp || 0;
-map[t.nik].final = +t.pph21_final || 0;
-
+map[t.nik].bj = +t.biaya_jabatan||0;
+map[t.nik].final = +t.pph21_final||0;
 }
 
+// akumulasi TER
+map[t.nik].ter = (map[t.nik].ter||0) + (+t.pph_ter||0);
 });
 
-// ================= BUILD =================
+// 🔥 build final
 pphData=[];
 
 Object.keys(map).forEach(nik=>{
 
-let m = master.find(x=>x.nik===nik) || {};
+let m = master.find(x=>x.nik===nik)||{};
 let d = map[nik];
 
-// FILTER
-if(filterNik && !nik.toLowerCase().includes(filterNik)) return;
-if(filterProject && !(m.project||"").toLowerCase().includes(filterProject)) return;
-
-let pengurang = (d.bj || 0) + (d.jht || 0);
+let pengurang = (d.bj||0)+(d.jht||0);
+let neto = (d.bruto||0) - pengurang;
+let ptkp = getPTKP(m.status_pajak);
+let pkp = Math.max(0, neto - ptkp);
 
 pphData.push({
 nik,
 nama:m.nama||"",
-project:m.project||"",
 gapok:d.gapok||0,
 tunjangan:d.tunjangan||0,
 premi:d.premi||0,
@@ -97,18 +184,65 @@ bruto:d.bruto||0,
 biaya_jabatan:d.bj||0,
 jht:d.jht||0,
 pengurang,
-neto:d.neto||0,      // ✅ dari DB
-ptkp:getPTKP(m.status_pajak),
-pkp:d.pkp||0,        // ✅ dari DB
+neto,
+ptkp,
+pkp,
 pph_final:d.final||0,
 pph_potong:d.ter||0,
-selisih:(d.final||0)-(d.ter||0),
-status:Math.abs((d.final||0)-(d.ter||0))<1000?"VALID":"CEK"
+selisih:(d.final||0)-(d.ter||0)
 });
 
 });
 
-render();
-renderChart();
+renderPPH(pphData);
 
 }
+
+// ================= RENDER =================
+function renderPPH(data){
+let tbody=document.querySelector("#pphTable tbody");
+tbody.innerHTML="";
+data.forEach(d=>{
+tbody.innerHTML+=`
+<tr>
+<td>${d.nik}</td>
+<td>${d.nama}</td>
+<td>${d.gapok}</td>
+<td>${d.tunjangan}</td>
+<td>${d.premi}</td>
+<td>${d.irregular}</td>
+<td>${d.bruto}</td>
+<td>${d.biaya_jabatan}</td>
+<td>${d.jht}</td>
+<td>${d.pengurang}</td>
+<td>${d.neto}</td>
+<td>${d.ptkp}</td>
+<td>${d.pkp}</td>
+<td>${d.pph_final}</td>
+<td>${d.pph_potong}</td>
+<td>${d.selisih}</td>
+</tr>`;
+});
+}
+
+// ================= EXPORT =================
+function exportPPH(){
+let ws = XLSX.utils.json_to_sheet(pphData);
+let wb = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb, ws, "PPH21");
+XLSX.writeFile(wb, "report_pph21.xlsx");
+}
+
+// ================= PTKP =================
+function getPTKP(status){
+const map={
+"TK/0":54000000,"TK/1":58500000,"TK/2":63000000,"TK/3":67500000,
+"K/0":58500000,"K/1":63000000,"K/2":67500000,"K/3":72000000
+};
+return map[(status||"TK/0").toUpperCase()]||54000000;
+}
+
+</script>
+
+</body>
+</html>
