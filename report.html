@@ -2,35 +2,36 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Report Payroll</title>
+<title>Report Pajak</title>
 
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <style>
-body{font-family:Segoe UI;background:#f4f6f9;margin:0}
-.header{background:#1e293b;color:white;padding:15px}
-.container{padding:20px}
-button{padding:8px 12px;margin-right:10px;border:none;border-radius:6px;color:white;cursor:pointer}
-.blue{background:#3b82f6}
-.green{background:#10b981}
-table{width:100%;border-collapse:collapse;margin-top:20px;background:white}
-th,td{border:1px solid #ddd;padding:6px;font-size:12px}
-th{background:#334155;color:white}
+body{font-family:Segoe UI;background:#f4f6f9;margin:0;}
+.header{background:#243447;color:white;padding:20px;}
+.container{padding:20px;}
+button{padding:8px 12px;margin-right:10px;border:none;border-radius:6px;color:white;cursor:pointer;}
+.blue{background:#3b82f6;} .green{background:#10b981;}
+table{width:100%;border-collapse:collapse;margin-top:10px;background:white;}
+th,td{border:1px solid #ddd;padding:6px;font-size:12px;}
+th{background:#1e293b;color:white;}
 </style>
 </head>
 
 <body>
 
 <div class="header">
-<h2>Report Payroll & PPh21</h2>
+<h2>Report Pajak</h2>
 </div>
 
 <div class="container">
 
+<!-- ================= MASTER DATA ================= -->
 <h3>Report Master Data</h3>
 <button class="blue" onclick="loadMaster()">Load</button>
 <button class="green" onclick="exportMaster()">Export Excel</button>
+
 <table id="masterTable">
 <thead>
 <tr>
@@ -42,6 +43,7 @@ th{background:#334155;color:white}
 
 <hr>
 
+<!-- ================= PPH 21 ================= -->
 <h3>Report PPh 21 Tahunan</h3>
 <select id="tahun"></select>
 <button class="blue" onclick="loadPPH()">Load</button>
@@ -50,11 +52,22 @@ th{background:#334155;color:white}
 <table id="pphTable">
 <thead>
 <tr>
-<th>NIK</th><th>Nama</th>
-<th>Gapok</th><th>Tunjangan</th><th>Premi</th><th>Irregular</th>
-<th>Bruto</th><th>Biaya Jabatan</th><th>JHT</th>
-<th>Pengurang</th><th>Neto</th><th>PTKP</th><th>PKP</th>
-<th>PPH Final</th><th>PPH Dipotong</th><th>Selisih</th>
+<th>NIK</th>
+<th>Nama</th>
+<th>Gapok</th>
+<th>Tunjangan</th>
+<th>Premi</th>
+<th>Bonus/THR</th>
+<th>Bruto</th>
+<th>Biaya Jabatan</th>
+<th>JHT</th>
+<th>Pengurang</th>
+<th>Neto</th>
+<th>PTKP</th>
+<th>PKP</th>
+<th>PPh Terutang</th>
+<th>PPh Dipotong</th>
+<th>Selisih</th>
 </tr>
 </thead>
 <tbody></tbody>
@@ -64,23 +77,21 @@ th{background:#334155;color:white}
 
 <script>
 
-const supabaseClient = supabase.createClient(
+const supabase = supabase.createClient(
 "https://nwrbjbwjmkahjuuyizfq.supabase.co",
 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmJqYndqbWthaGp1dXlpemZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MjM4OTIsImV4cCI6MjA5MjQ5OTg5Mn0.n67pONlkoMqZguyoTwQQFJ0VBRfPaIVuVlPGxsajaGA"
 );
 
 // ================= INIT =================
-document.addEventListener("DOMContentLoaded",()=>{
 for(let y=2023;y<=2030;y++){
-tahun.innerHTML+=`<option>${y}</option>`;
+document.getElementById("tahun").innerHTML += `<option>${y}</option>`;
 }
-});
 
 // ================= MASTER =================
 let masterData=[];
 
 async function loadMaster(){
-const {data=[]}=await supabaseClient.from("master_payroll").select("*");
+const {data=[]} = await supabase.from("master_payroll").select("*");
 masterData=data;
 
 let tbody=document.querySelector("#masterTable tbody");
@@ -101,108 +112,105 @@ function exportMaster(){
 let ws = XLSX.utils.json_to_sheet(masterData);
 let wb = XLSX.utils.book_new();
 XLSX.utils.book_append_sheet(wb, ws, "Master");
-XLSX.writeFile(wb, "master_data.xlsx");
+XLSX.writeFile(wb, "master.xlsx");
 }
 
-// ================= PPH =================
+// ================= PPH 21 =================
 let pphData=[];
 
 async function loadPPH(){
 
 const tahun = document.getElementById("tahun").value;
 
-const {data:payroll=[]}=await supabaseClient
+const {data:payroll=[]} = await supabase
 .from("payroll")
 .select("*")
-.like("periode",`${tahun}-%`);
+.like("periode", `${tahun}%`);
 
-const {data:tax=[]}=await supabaseClient
+const {data:tax=[]} = await supabase
 .from("tax_engine")
 .select("*")
-.like("periode",`${tahun}-%`);
+.like("periode", `${tahun}%`);
 
-const {data:master=[]}=await supabaseClient
-.from("master_payroll").select("*");
+const {data:master=[]} = await supabase
+.from("master_payroll")
+.select("*");
 
-// 🔥 grouping per NIK
 let map={};
 
+// ================= AGREGASI =================
 payroll.forEach(r=>{
 if(!map[r.nik]) map[r.nik]={
-gapok:0,tunjangan:0,irregular:0,
-bulanTerakhir:""
+nik:r.nik,
+gapok:0,tunjangan:0,bonus:0
 };
 
-map[r.nik].gapok+=+r.gaji_pokok||0;
-map[r.nik].tunjangan+=+r.tunjangan||0;
-map[r.nik].irregular+=+r.irregular||0;
-
-
-let lastMonthMap = {};
-    
-// 🔥 tentukan bulan terakhir per NIK dari tax_engine
-tax.forEach(t=>{
-if(!lastMonthMap[t.nik] || t.periode > lastMonthMap[t.nik]){
-lastMonthMap[t.nik] = t.periode;
-}
-});
-// 🔥 ambil dari tax_engine
-tax.forEach(t=>{
-if(!map[t.nik]) return;
-
-map[t.nik].premi = (map[t.nik].premi||0) + (+t.premi||0);
-map[t.nik].bruto = Math.max(map[t.nik].bruto||0, +t.akumbruto||0);
-map[t.nik].jht = Math.max(map[t.nik].jht||0, +t.jht||0);
-
-// biaya jabatan dari bulan terakhir
-if(t.periode === lastMonthMap[t.nik]){
-    map[t.nik].final = +t.pph21_final||0;
-    map[t.nik].bj = +t.biaya_jabatan||0;
-    map[t.nik].neto = +t.neto||0;
-    map[t.nik].pkp = +t.pkp||0;
-}
-// akumulasi TER
-map[t.nik].ter = (map[t.nik].ter||0) + (+t.pph_ter||0);
+map[r.nik].gapok += +r.gaji_pokok||0;
+map[r.nik].tunjangan += +r.tunjangan||0;
+map[r.nik].bonus += +r.irregular||0;
 });
 
-// 🔥 build final
+tax.forEach(r=>{
+if(!map[r.nik]) return;
+
+map[r.nik].premi = (map[r.nik].premi||0) + (+r.premi||0);
+map[r.nik].bruto = r.akumbruto; // ambil terakhir
+map[r.nik].bj = r.biaya_jabatan;
+map[r.nik].jht = r.iuran_pensiun;
+map[r.nik].pph_final = r.pph21_final;
+map[r.nik].pph_ter = (map[r.nik].pph_ter||0) + (+r.pph_ter||0);
+});
+
 pphData=[];
 
-Object.keys(map).forEach(nik=>{
+Object.values(map).forEach(d=>{
 
-let m = master.find(x=>x.nik===nik)||{};
-let d = map[nik];
+let m = master.find(x=>x.nik===d.nik)||{};
 
-let pengurang = (d.bj||0)+(d.jht||0);
-let neto = d.neto || 0;
-let ptkp = getPTKP(m.status_pajak);
-let pkp = d.pkp || 0;
+let bruto = d.bruto||0;
+let pengurang = (d.bj||0) + (d.jht||0);
+let neto = bruto - pengurang;
+
+let ptkpMap={
+"TK/0":54000000,"TK/1":58500000,"TK/2":63000000,"TK/3":67500000,
+"K/0":58500000,"K/1":63000000,"K/2":67500000,"K/3":72000000
+};
+
+let ptkp = ptkpMap[m.status_pajak]||54000000;
+let pkp = Math.max(0, neto - ptkp);
+
+let selisih = (d.pph_final||0) - (d.pph_ter||0);
 
 pphData.push({
-    nik: nik,
-    nama: m.nama || "",
-    gapok: d.gapok || 0,
-    tunjangan: d.tunjangan || 0,
-    premi: d.premi || 0,
-    irregular: d.irregular || 0,
-    bruto: d.bruto || 0,
-    biaya_jabatan: d.bj || 0,
-    jht: d.jht || 0,
-    pengurang: pengurang,
-    neto: neto,
-    ptkp: ptkp,
-    pkp: pkp,
-    pph_final: (d.final || 0),
-    pph_potong: (d.ter || 0),
-    selisih: ((d.final || 0) - (d.ter || 0))
+nik:d.nik,
+nama:m.nama||"",
+gapok:d.gapok,
+tunjangan:d.tunjangan,
+premi:d.premi||0,
+bonus:d.bonus,
+bruto,
+biaya_jabatan:d.bj||0,
+jht:d.jht||0,
+pengurang,
+neto,
+ptkp,
+pkp,
+pph_terutang:d.pph_final||0,
+pph_dipotong:d.pph_ter||0,
+selisih
+});
+
 });
 
 renderPPH(pphData);
+
+}
 
 // ================= RENDER =================
 function renderPPH(data){
 let tbody=document.querySelector("#pphTable tbody");
 tbody.innerHTML="";
+
 data.forEach(d=>{
 tbody.innerHTML+=`
 <tr>
@@ -211,7 +219,7 @@ tbody.innerHTML+=`
 <td>${d.gapok}</td>
 <td>${d.tunjangan}</td>
 <td>${d.premi}</td>
-<td>${d.irregular}</td>
+<td>${d.bonus}</td>
 <td>${d.bruto}</td>
 <td>${d.biaya_jabatan}</td>
 <td>${d.jht}</td>
@@ -219,8 +227,8 @@ tbody.innerHTML+=`
 <td>${d.neto}</td>
 <td>${d.ptkp}</td>
 <td>${d.pkp}</td>
-<td>${d.pph_final}</td>
-<td>${d.pph_potong}</td>
+<td>${d.pph_terutang}</td>
+<td>${d.pph_dipotong}</td>
 <td>${d.selisih}</td>
 </tr>`;
 });
@@ -231,19 +239,9 @@ function exportPPH(){
 let ws = XLSX.utils.json_to_sheet(pphData);
 let wb = XLSX.utils.book_new();
 XLSX.utils.book_append_sheet(wb, ws, "PPH21");
-XLSX.writeFile(wb, "report_pph21.xlsx");
-}
-
-// ================= PTKP =================
-function getPTKP(status){
-const map={
-"TK/0":54000000,"TK/1":58500000,"TK/2":63000000,"TK/3":67500000,
-"K/0":58500000,"K/1":63000000,"K/2":67500000,"K/3":72000000
-};
-return map[(status||"TK/0").toUpperCase()]||54000000;
+XLSX.writeFile(wb, "pph21.xlsx");
 }
 
 </script>
-
 </body>
 </html>
