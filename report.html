@@ -141,14 +141,21 @@ if(r.periode > map[r.nik].bulanTerakhir){
 map[r.nik].bulanTerakhir = r.periode;
 }
 });
+let lastMonthMap = {};
 
+// 🔥 tentukan bulan terakhir per NIK dari tax_engine
+tax.forEach(t=>{
+if(!lastMonthMap[t.nik] || t.periode > lastMonthMap[t.nik]){
+lastMonthMap[t.nik] = t.periode;
+}
+});
 // 🔥 ambil dari tax_engine
 tax.forEach(t=>{
 if(!map[t.nik]) return;
 
 map[t.nik].premi = (map[t.nik].premi||0) + (+t.premi||0);
 map[t.nik].bruto = Math.max(map[t.nik].bruto||0, +t.akumbruto||0);
-map[t.nik].jht = Math.max(map[t.nik].jht||0, +t.iuran_pensiun||0);
+map[t.nik].jht = Math.max(map[t.nik].jht||0, +t.jht||0);
 
 // biaya jabatan dari bulan terakhir
 if(t.periode === lastMonthMap[t.nik]){
