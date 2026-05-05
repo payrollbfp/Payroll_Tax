@@ -159,10 +159,7 @@ let irregular=+r.irregular||0;
 let bruto=gapok+tunjangan+premi+irregular;
 
 // 🔥 AKUMULASI PER NIK
-if(!akumulasiMap[r.nik]) akumulasiMap[r.nik]=0;
-akumulasiMap[r.nik] += bruto;
-
-let akumbruto = akumulasiMap[r.nik]; // ✅ ini yang benar
+let akumNeto = neto; // ✅ langsung pakai, jangan diakumulasi lagi
 
 // ✅ JHT = jht2 + jp1 (SESUAI KOREKSI)
 let jhtBulanan = (+r.jht2 || 0) + (+r.jp1 || 0);
