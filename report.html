@@ -179,24 +179,22 @@ let ptkp = getPTKP(m.status_pajak);
 let pkp = d.pkp || 0;
 
 pphData.push({
-nik,
-nama:m.nama||"",
-gapok:d.gapok||0,
-tunjangan:d.tunjangan||0,
-premi:d.premi||0,
-irregular:d.irregular||0,
-bruto:d.bruto||0,
-biaya_jabatan:d.bj||0,
-jht:d.jht||0,
-pengurang,
-neto,
-ptkp,
-pkp,
-pph_final:d.final||0,
-pph_potong:d.ter||0,
-selisih:(d.final||0)-(d.ter||0)
-});
-
+    nik: nik,
+    nama: m.nama || "",
+    gapok: d.gapok || 0,
+    tunjangan: d.tunjangan || 0,
+    premi: d.premi || 0,
+    irregular: d.irregular || 0,
+    bruto: d.bruto || 0,
+    biaya_jabatan: d.bj || 0,
+    jht: d.jht || 0,
+    pengurang: pengurang,
+    neto: neto,
+    ptkp: ptkp,
+    pkp: pkp,
+    pph_final: (d.final || 0),
+    pph_potong: (d.ter || 0),
+    selisih: ((d.final || 0) - (d.ter || 0))
 });
 
 renderPPH(pphData);
