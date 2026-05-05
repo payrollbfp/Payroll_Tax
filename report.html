@@ -121,9 +121,9 @@ async function loadPPH(){
 
 const tahun = document.getElementById("tahun").value;
 
-const {data:payroll=[]} = await supabase
+const {data:payroll=[]} = await supabaseClient
 .from("payroll")
-.select("*")
+.select("*");
 .like("periode", `${tahun}%`);
 
 const {data:tax=[]} = await supabase
