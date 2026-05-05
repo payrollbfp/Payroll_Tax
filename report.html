@@ -4,7 +4,11 @@
 <meta charset="UTF-8">
 <title>Report Pajak</title>
 
+<!-- SUPABASE -->
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+<!-- EXCEL -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <style>
 body{font-family:Segoe UI;background:#f4f6f9;margin:0;}
@@ -76,6 +80,7 @@ th{background:#1e293b;color:white;}
 
 <script>
 
+// ================= SUPABASE FIX =================
 const supabaseClient = window.supabase.createClient(
 "https://nwrbjbwjmkahjuuyizfq.supabase.co",
 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmJqYndqbWthaGp1dXlpemZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MjM4OTIsImV4cCI6MjA5MjQ5OTg5Mn0.n67pONlkoMqZguyoTwQQFJ0VBRfPaIVuVlPGxsajaGA"
@@ -83,14 +88,20 @@ const supabaseClient = window.supabase.createClient(
 
 // ================= INIT =================
 for(let y=2023;y<=2030;y++){
-document.getElementById("tahun").innerHTML += `<option>${y}</option>`;
+document.getElementById("tahun").innerHTML += `<option value="${y}">${y}</option>`;
 }
 
 // ================= MASTER =================
 let masterData=[];
 
 async function loadMaster(){
-const {data=[]} = await supabase.from("master_payroll").select("*");
+const {data=[], error} = await supabaseClient.from("master_payroll").select("*");
+
+if(error){
+alert(error.message);
+return;
+}
+
 masterData=data;
 
 let tbody=document.querySelector("#masterTable tbody");
@@ -114,34 +125,41 @@ XLSX.utils.book_append_sheet(wb, ws, "Master");
 XLSX.writeFile(wb, "master.xlsx");
 }
 
-// ================= PPH 21 =================
+// ================= PPH =================
 let pphData=[];
 
 async function loadPPH(){
 
 const tahun = document.getElementById("tahun").value;
 
-const {data:payroll=[]} = await supabaseClient
+const {data:payroll=[], error:e1} = await supabaseClient
 .from("payroll")
-.select("*");
+.select("*")
 .like("periode", `${tahun}%`);
 
-const {data:tax=[]} = await supabase
+const {data:tax=[], error:e2} = await supabaseClient
 .from("tax_engine")
 .select("*")
 .like("periode", `${tahun}%`);
 
-const {data:master=[]} = await supabase
+const {data:master=[], error:e3} = await supabaseClient
 .from("master_payroll")
 .select("*");
 
+if(e1||e2||e3){
+alert("Error load data");
+return;
+}
+
 let map={};
 
-// ================= AGREGASI =================
+// ================= AGREGASI PAYROLL =================
 payroll.forEach(r=>{
 if(!map[r.nik]) map[r.nik]={
 nik:r.nik,
-gapok:0,tunjangan:0,bonus:0
+gapok:0,
+tunjangan:0,
+bonus:0
 };
 
 map[r.nik].gapok += +r.gaji_pokok||0;
@@ -149,17 +167,29 @@ map[r.nik].tunjangan += +r.tunjangan||0;
 map[r.nik].bonus += +r.irregular||0;
 });
 
+// ================= AGREGASI TAX =================
 tax.forEach(r=>{
+
 if(!map[r.nik]) return;
 
+// premi (akumulasi)
 map[r.nik].premi = (map[r.nik].premi||0) + (+r.premi||0);
-map[r.nik].bruto = r.akumbruto; // ambil terakhir
+
+// ambil BULAN TERAKHIR
+if(!map[r.nik].lastPeriode || r.periode > map[r.nik].lastPeriode){
+map[r.nik].lastPeriode = r.periode;
+map[r.nik].bruto = r.akumbruto;
 map[r.nik].bj = r.biaya_jabatan;
 map[r.nik].jht = r.iuran_pensiun;
 map[r.nik].pph_final = r.pph21_final;
+}
+
+// TER akumulasi
 map[r.nik].pph_ter = (map[r.nik].pph_ter||0) + (+r.pph_ter||0);
+
 });
 
+// ================= FINAL =================
 pphData=[];
 
 Object.values(map).forEach(d=>{
@@ -175,7 +205,7 @@ let ptkpMap={
 "K/0":58500000,"K/1":63000000,"K/2":67500000,"K/3":72000000
 };
 
-let ptkp = ptkpMap[m.status_pajak]||54000000;
+let ptkp = ptkpMap[(m.status_pajak||"TK/0").toUpperCase()]||54000000;
 let pkp = Math.max(0, neto - ptkp);
 
 let selisih = (d.pph_final||0) - (d.pph_ter||0);
@@ -242,5 +272,6 @@ XLSX.writeFile(wb, "pph21.xlsx");
 }
 
 </script>
+
 </body>
 </html>
