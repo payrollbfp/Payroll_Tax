@@ -157,6 +157,11 @@ let premi=(+r.jkk||0)+(+r.jkm||0)+(+r.bpjs4||0);
 let irregular=+r.irregular||0;
 
 let bruto=gapok+tunjangan+premi+irregular;
+// 🔥 AKUMULASI PER NIK
+if(!akumulasiMap[r.nik]) akumulasiMap[r.nik]=0;
+akumulasiMap[r.nik] += bruto;
+
+let akumbruto = akumulasiMap[r.nik]; // ✅ ini yang benar
 
 // 🔥 AKUMULASI PER NIK
 let akumNeto = neto; // ✅ langsung pakai, jangan diakumulasi lagi
@@ -201,16 +206,11 @@ let maxBJ = getMaxBiayaJabatan(bulanNum);
 let bj=bjAkumulasi
 let neto = akumbruto - bj - jht;
 
-// 🔥 akumulasi neto
-if(!akumulasiNetoMap[r.nik]) akumulasiNetoMap[r.nik]=0;
-akumulasiNetoMap[r.nik] += neto;
-
-let akumNeto = akumulasiNetoMap[r.nik];
 
 let status=normalizeStatus(m.status_pajak);
 let ptkp=PTKP_MAP[status]||54000000;
 
-let pkp = Math.max(0, akumNeto - ptkp);
+let pkp = Math.max(0, neto - ptkp);
 
 let ter=getTER(bruto,status);
 let final=pphProgresif(pkp);
