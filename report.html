@@ -24,8 +24,9 @@ th{background:#1e293b;color:white;}
 
 <body>
 
-<div class="header">
+<div class="header" style="display:flex;justify-content:space-between;align-items:center;">
 <h2>Report Pajak</h2>
+<button class="blue" onclick="goBack()">Back</button>
 </div>
 
 <div class="container">
@@ -85,7 +86,9 @@ const supabaseClient = window.supabase.createClient(
 "https://nwrbjbwjmkahjuuyizfq.supabase.co",
 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53cmJqYndqbWthaGp1dXlpemZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MjM4OTIsImV4cCI6MjA5MjQ5OTg5Mn0.n67pONlkoMqZguyoTwQQFJ0VBRfPaIVuVlPGxsajaGA"
 );
-
+function goBack(){
+    window.location.href = "/Payroll_Tax/dashboard.html";
+}
 // ================= INIT =================
 for(let y=2023;y<=2030;y++){
 document.getElementById("tahun").innerHTML += `<option value="${y}">${y}</option>`;
